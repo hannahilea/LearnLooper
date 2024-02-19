@@ -1,5 +1,3 @@
-#TODO: set up formatting
-
 module LearnLooper
 
 export learn_demo, learn_song
@@ -19,6 +17,7 @@ Computer plays `segment` of `input`.
 function play(input, segment; volume_scale=1)
     seg = input[segment]
     println(volume_scale == 0 ? "🎤Pausing" : "👂Playing", ": ", seg)
+    sleep(.5)
     return nothing
 end
 
@@ -35,8 +34,8 @@ function learn_song(signal, segments; num_repetitions, progression_mode)
     @info "Welcome to the LearnLooper! Prepare to learn by looping!" num_repetitions progression_mode
     for tail_segment in segments
         segment = tail_segment
-        if progression_mode == :cumulative 
-            segment = first(first(segments)) : last(tail_segment)
+        if progression_mode == :cumulative
+            segment = first(first(segments)):last(tail_segment)
         end
         for _ in 1:num_repetitions
             play(signal, segment)
@@ -49,7 +48,8 @@ function learn_song(signal, segments; num_repetitions, progression_mode)
     return nothing
 end
 
-function learn_demo(; num_repetitions=2, progression_mode=:sequential, segments=DEMO_SEGMENTS)
+function learn_demo(; num_repetitions=2, progression_mode=:sequential,
+                    segments=DEMO_SEGMENTS)
     return learn_song(DEMO_SONG, segments; num_repetitions, progression_mode)
 end
 
