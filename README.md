@@ -33,6 +33,9 @@ When you're learn your own input media, see the docstring for `learn`:
 ### Next steps
 As a treat:
 - Implmenent `play(input::AbstractVector{String})` with computer audio 
+  - Crumb: https://maithegeek.medium.com/having-fun-in-macos-with-say-command-d4a0d3319668
+- Set up params to control global playback speed, etc
+- Set up notebook to play with controls while learning/run demo?
 - Find/use package to play audio files
 
 Housekeeping:
@@ -46,6 +49,7 @@ Housekeeping:
 - Make devlog, update README
 - Add tests
 - Update "cumulative" logic to support non-contiguous segments
+- Start adding `say` behavior (mac only)
 
 ### 19 Feb
 - initial implementation!
