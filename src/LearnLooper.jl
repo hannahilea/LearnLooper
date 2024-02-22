@@ -103,7 +103,7 @@ end
 - note that non-contiguous `spans` may result in a click in cumulative iteration mode
 """
 function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
-                    interrepeat_pause=0, speed=1)
+                    interrepeat_pause=0.1, speed=1)
     #TODO-future: safety-check the iteration_mode, num_repetitions, span v input length
     #TODO-future: if playing text, warn if not mac
     @info "Welcome to the LearnLooper: prepare to learn by looping!" num_repetitions iteration_mode interrepeat_pause
