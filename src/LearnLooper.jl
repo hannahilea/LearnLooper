@@ -1,11 +1,9 @@
 module LearnLooper
 
-export learn_demo, learnloop
+# using Sound
+# using SampledSignals: SampleBuf
 
-const DEMO_ALPHABET = collect('a':'z')  #TODO-future: make this a loaded audio file
-
-#TODO-future: make this a blob that has more info, e.g. label + timestamp + metadata
-const DEMO_SPANS = [1:5, 6:20, 21:26]  # assume non-overlapping and contiguous for the demo spans
+export learnloop
 
 """
     play(input; volume_scale=1) -> nothing
@@ -55,7 +53,8 @@ preprocess_input(input::Number) = string(input)
 - clarify difference between 0 and 1 repetitions; consider "num_playbacks" or similar
 - note that non-contiguous `spans` may result in a click in cumulative iteration mode
 """
-function learnloop(input, spans; num_repetitions, iteration_mode, interrepeat_pause=0)
+function learnloop(input, spans; num_repetitions=2, iteration_mode=:sequential,
+                   interrepeat_pause=0)
     #TODO-future: safety-check the iteration_mode, num_repetitions, span v input length
     #TODO-future: if playing text, warn if not mac
     @info "Welcome to the LearnLooper: prepare to learn by looping!" num_repetitions iteration_mode interrepeat_pause
@@ -77,12 +76,6 @@ function learnloop(input, spans; num_repetitions, iteration_mode, interrepeat_pa
     end
     return nothing
     #TODO: for testing, return vector of spans 
-end
-
-function learn_demo(; num_repetitions=2, iteration_mode=:sequential,
-                    spans=DEMO_SPANS, interrepeat_pause=0.1)
-    return learnloop(DEMO_ALPHABET, spans; num_repetitions, iteration_mode,
-                     interrepeat_pause)
 end
 
 end # module LearnLooper

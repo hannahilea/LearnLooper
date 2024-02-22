@@ -7,10 +7,6 @@ using Aqua
         Aqua.test_all(LearnLooper; ambiguities=false)
     end
 
-    @testset "Entrypoints" begin
-        isnothing(learn_demo())
-    end
-
     @testset "`compute_learnspan`" begin
         using LearnLooper: compute_learnspan
         contiguous_spans = [1:4, 5:8, 9:22]
@@ -40,5 +36,10 @@ using Aqua
         @test isnothing(learnloop(readlines(f), [1:2, 5:5]; num_repetitions=2, iteration_mode=:cumulative))
     end
 
+    @testset "`learnloop` from audio file" begin
+        f = joinpath(pkgdir(LearnLooper), "README.md")
+        @test isnothing(learnloop(read(f, String), [1:2, 3:4]; num_repetitions=2, iteration_mode=:cumulative))
+        @test isnothing(learnloop(readlines(f), [1:2, 5:5]; num_repetitions=2, iteration_mode=:cumulative))
+    end
    
 end

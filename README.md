@@ -15,17 +15,17 @@ Pkg.instantiate()
 
 using LearnLooper
 
-learn_demo()
+learnloop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:cumulative)
 ```
 In the REPL, do 
 ```
-?learn_demo
+?learnloop
 ```
-for list of parameters to play with. These include ways to indicate number of repetitions and playback modes (e.g., sequential segments vs cumulative segments), as long as the ability to pass in your own segments for the demo input.
+for full list of parameters to play with. These include ways to indicate number of repetitions and playback modes (e.g., sequential segments vs cumulative segments), as long as the ability to pass in your own segments for the demo input.
 
-When you're learn your own input media, see the docstring for `learn`:
+See the docstring for `learnloop` for more options:
 ```
-?learn
+?learnloop
 ```
 
 ## Dev log 
