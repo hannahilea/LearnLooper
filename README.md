@@ -15,17 +15,25 @@ Pkg.instantiate()
 
 using LearnLooper
 
-learnloop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:cumulative)
+# Learn text!
+learn_loop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:cumulative)
+
+# Learn pi!
+learn_loop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:cumulative)
+
+# Learn a song!
+learn_loop(LearnLooper.LEHRER_DEMO_SONG, LearnLooper.LEHRER_DEMO_SONG_SPANS;
+           num_repetitions=2, iteration_mode=:sequential)
 ```
 In the REPL, do 
 ```
-?learnloop
+?learn_loop
 ```
 for full list of parameters to play with. These include ways to indicate number of repetitions and playback modes (e.g., sequential segments vs cumulative segments), as long as the ability to pass in your own segments for the demo input.
 
-See the docstring for `learnloop` for more options:
+See the docstring for `learn_loop` for more options:
 ```
-?learnloop
+?learn_loop
 ```
 
 ## Dev log 
@@ -34,7 +42,9 @@ See the docstring for `learnloop` for more options:
 As a treat:
 - Set up params to control global playback speed, etc?
 - Set up notebook to play with controls while learning/run demo?
-- Find/use package to play audio files
+- Find/use package to better vocode/adjust speed
+- Support backing track(s)/drone
+- Support loading annotation files (as created in an external app)
 
 Housekeeping:
 - Make testing nicer (don't actually play audio, output what *was* played)
@@ -47,6 +57,8 @@ Housekeeping:
 - Fully support `say` behavior (mac only)
 - Support strings, vector of strings, numbers
 - Add test for above plus reading in text file
+- Added .wav support!! 
+- Added (lousy) speed support!
 
 ### 20 Feb
 - Make devlog, update README
