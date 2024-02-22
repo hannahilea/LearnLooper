@@ -27,10 +27,18 @@ using Aqua
               [1:4, 9:22]
     end
 
-    @testset "`compute_learnspan`" begin
+    @testset "`learnloop` from raw input" begin
         @test isnothing(learnloop(collect('a':'z'), [1:2, 3:4]; num_repetitions=2, iteration_mode=:cumulative))
         @test isnothing(learnloop("A lone sentence is indexed by word", [1:2, 3:4]; num_repetitions=2, iteration_mode=:cumulative))
         @test isnothing(learnloop(["A vector of phrases", "are indexed", "by phrase"], [1:2, 3:3]; num_repetitions=2, iteration_mode=:cumulative))
         @test isnothing(learnloop(pi+0, [1:4, 5:8]; num_repetitions=2, iteration_mode=:cumulative))
     end
+
+    @testset "`learnloop` from file" begin
+        f = joinpath(pkgdir(LearnLooper), "README.md")
+        @test isnothing(learnloop(read(f, String), [1:2, 3:4]; num_repetitions=2, iteration_mode=:cumulative))
+        @test isnothing(learnloop(readlines(f), [1:2, 5:5]; num_repetitions=2, iteration_mode=:cumulative))
+    end
+
+   
 end

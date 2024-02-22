@@ -32,18 +32,21 @@ When you're learn your own input media, see the docstring for `learn`:
 
 ### Next steps
 As a treat:
-- Implmenent `play(input::AbstractVector{String})` with computer audio 
-  - Crumb: https://maithegeek.medium.com/having-fun-in-macos-with-say-command-d4a0d3319668
-- Set up params to control global playback speed, etc
+- Set up params to control global playback speed, etc?
 - Set up notebook to play with controls while learning/run demo?
 - Find/use package to play audio files
 
 Housekeeping:
+- Make testing nicer (don't actually play audio, output what *was* played)
 - Add codecov (+ badge)
 - Add docstrings to main entrypoints
 - Move printouts to debug mode
 - Safety ~first~ last!
-- Rename stuff; decide on span vs seg terminology
+
+### 21 Feb
+- Fully support `say` behavior (mac only)
+- Support strings, vector of strings, numbers
+- Add test for above plus reading in text file
 
 ### 20 Feb
 - Make devlog, update README

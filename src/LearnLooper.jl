@@ -31,7 +31,7 @@ function compute_learnspan(i_span, spans; iteration_mode)
     if iteration_mode == :cumulative
         current_spans = spans[1:i_span]
         return length(current_spans) == 1 ? only(current_spans) :
-               collect(Iterators.flatten(current_spans)) #TODO: might be overkill
+               collect(Iterators.flatten(current_spans))
     end
     if iteration_mode != :sequential
         @warn "`iteration_mode=$mode` is unsupported; falling back to `:sequential` (options: `sequential`, `cumulative`)"
