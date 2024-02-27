@@ -1,8 +1,6 @@
 module LearnLooper
 
-using Sound
 using WAV
-using TimeSpans
 
 export learn_loop
 
@@ -35,13 +33,10 @@ function play(input::Audio; volume_scale=1, speed)
     samples = input.samples
     sample_rate = input.sample_rate
 
-    # TODO-future: this vocoder sounds TERRIBLE: use better processing!!!!!
     if speed != 1
-        hopin = 484 # default for phasevocode
-        hopout = hopin / speed
-        samples = phase_vocoder(input.samples, sample_rate; hopin, hopout)
+        @warn "Not yet implemented!"
     end
-    sound(volume_scale .* samples, sample_rate)
+    wavplay(volume_scale .* samples, sample_rate)
     return nothing
 end
 
