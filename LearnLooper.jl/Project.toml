@@ -8,6 +8,7 @@ WAV = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"
 
 [compat]
 Aqua = "0.6"
+WAV = "1.2.0"
 julia = "1.7.2"
 
 [extras]
