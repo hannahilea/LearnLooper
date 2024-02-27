@@ -1,44 +1,24 @@
-# LearnLooper.jl
+# LearnLooper
 
-Call and response learning tool for learning by looping over a prerecorded song (or speech or video or...).
+Learn via call and response by looping over the material to be learned (musical audio or speech or video or text...) and repeating it back during the pauses. 
 
 **VERY MUCH WIP! Use at your own risk :)**
 
-## Demo
+## Repository structure
 
-To use, [install Julia](https://julialang.org/downloads/#install_julia) and then launch the REPL with `julia --project=path/to/LearnLooper.jl `. 
+### [Demos](./demos)
 
-In the REPL, run
-```julia
-using Pkg
-Pkg.instantiate()
+For the most up-to-date behavior of LeanLooper, see the most recent demo in the demos folder.
 
-using LearnLooper
+### [LearnLooper.jl](./LearnLooper.jl)
 
-# Learn text!
-learn_loop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:sequential)
+Julia library that implements that looping logic.
 
-# Learn pi!
-learn_loop(pi + 0, [1:4, 5:8]; num_repetitions=2, iteration_mode=:cumulative)
+## Developer notes
 
-# Learn a song!
-learn_loop(LearnLooper.LEHRER_DEMO_SONG, LearnLooper.LEHRER_DEMO_SONG_SPANS;
-           num_repetitions=2, iteration_mode=:sequential)
-```
-In the REPL, do 
-```
-?learn_loop
-```
-for full list of parameters to play with. These include ways to indicate number of repetitions and playback modes (e.g., sequential segments vs cumulative segments), as long as the ability to pass in your own segments for the demo input.
+### Incomplete list of next steps
+...to be moved into issues when development is far enough. 
 
-See the docstring for `learn_loop` for more options:
-```
-?learn_loop
-```
-
-## Dev log 
-
-### Next steps
 As a treat:
 - Set up params to control global playback speed, etc?
 - Set up notebook to play with controls while learning/run demo?
@@ -53,29 +33,29 @@ Housekeeping:
 - Move printouts to debug mode
 - Safety ~first~ last!
 
-### 21 Feb
+### Dev log 
+
+#### 27 Feb
+- Restructure repo and move Julia library into a subdir
+
+#### 22 Feb
+- Set up first demo
+- Fix bug in 'cumulative' mode
+
+#### 21 Feb
 - Fully support `say` behavior (mac only)
 - Support strings, vector of strings, numbers
 - Add test for above plus reading in text file
 - Added .wav support!! 
 - Added (lousy) speed support!
 
-### 20 Feb
+#### 20 Feb
 - Make devlog, update README
 - Add tests
 - Update "cumulative" logic to support non-contiguous segments
 - Start adding `say` behavior (mac only)
 
-### 19 Feb
+#### 19 Feb
 - initial implementation!
 - create `learn_demo` for generic input vector with indexable segments
 - "play" by printing to screen
-
-
-
-
-                #   (12.81, 13.66), 
-                #   (13.66, 14.75),
-                #   (14.75, 15.75),
-                #   (15.72, 16.8)
-                  
