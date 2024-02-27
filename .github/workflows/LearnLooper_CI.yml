@@ -48,7 +48,7 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
         with:
           annotate: true
-          working-directory: LearnLooper.jl
+          project: LearnLooper.jl
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: 'src/'

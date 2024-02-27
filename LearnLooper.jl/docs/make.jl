@@ -7,8 +7,8 @@ makedocs(; modules=[LearnLooper],
          pages=["API Documentation" => "index.md"],
          strict=true)
 
-deploydocs(; repo="github.com/hannahilea/ExampleMonorepo.jl.git",
+deploydocs(; repo="github.com/hannahilea/LearnLooper.git",
            push_preview=true,
-           dirname="LearnLooper",
+           dirname="LearnLooper.jl",
            tag_prefix="LearnLooper-",
            devbranch="main")
