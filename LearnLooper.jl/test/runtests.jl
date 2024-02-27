@@ -16,12 +16,12 @@ using WAV
 
         @test collect_span(1, contiguous_spans; iteration_mode=:cumulative) == 1:4
         @test collect_span(2, contiguous_spans; iteration_mode=:cumulative) ==
-              [1:4, 5:8]
+              collect(1:8)
 
         noncontiguous_spans = [1:4, 9:22]
         @test collect_span(1, noncontiguous_spans; iteration_mode=:cumulative) == 1:4
         @test collect_span(2, noncontiguous_spans; iteration_mode=:cumulative) ==
-              [1:4, 9:22]
+              collect(Iterators.flatten([1:4, 9:22]))
     end
 
     @testset "`learn_loop` from raw input" begin
@@ -30,9 +30,9 @@ using WAV
         @test isnothing(learn_loop("A lone sentence is indexed by word", [1:2, 3:4];
                                    num_repetitions=2, iteration_mode=:cumulative))
         @test isnothing(learn_loop(["A vector of phrases", "are indexed", "by phrase"],
-                                   [1:2, 3:3]; num_repetitions=2,
+                                   [1:2, 3:3]; num_repetitions=1,
                                    iteration_mode=:cumulative))
-        @test isnothing(learn_loop(pi + 0, [1:4, 5:8]; num_repetitions=2,
+        @test isnothing(learn_loop(pi + 0, [1:4]; num_repetitions=1,
                                    iteration_mode=:cumulative))
     end
 

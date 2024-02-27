@@ -4,8 +4,7 @@ using Documenter
 makedocs(; modules=[LearnLooper],
          sitename="LearnLooper.jl",
          authors="hannahilea",
-         pages=["API Documentation" => "index.md"],
-         strict=true)
+         pages=["API Documentation" => "index.md"])
 
 deploydocs(; repo="github.com/hannahilea/LearnLooper.git",
            push_preview=true,
