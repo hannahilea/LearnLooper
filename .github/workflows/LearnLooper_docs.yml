@@ -1,4 +1,4 @@
-name: Docs - LearnLooper.jl
+name: LearnLooper.jl - Docs
 on:
   workflow_dispatch:
   push:
