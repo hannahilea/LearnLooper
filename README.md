@@ -8,7 +8,7 @@ Learn via call and response by looping over the material to be learned (musical 
 
 ### [Demos](./demos)
 
-For the most up-to-date behavior of LeanLooper, see the most recent demo in the demos folder.
+For the most up-to-date behavior of LeanLooper, see the most recent demo in the demos folder. Each demo should contain some form of manifest that is pinned to the version of LearnLooper.jl used at demo time. These demos are likely not forward-compatible, if e.g. the most recent version of LearnLooper.jl is checked out instead.
 
 ### [LearnLooper.jl](./LearnLooper.jl)
 
