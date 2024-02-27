@@ -1,6 +1,7 @@
 using Test
 using LearnLooper
 using Aqua
+using WAV
 
 @testset "LearnLooper" begin
     @testset "Aqua" begin
@@ -44,12 +45,16 @@ using Aqua
     end
 
     @testset "`learn_loop` from audio file" begin
-        using LearnLooper: LEHRER_DEMO_SONG, index_for_sec_spans
+        using LearnLooper: index_for_sec_spans
+
+        fname = joinpath(mktempdir(), "test.wav")
+        Fs = 8000
+        wavwrite(zeros(3 * Fs, 2), fname; Fs, nbits=0, compression=0)
 
         # Temporary until we use TimeSpans:
-        spans = [(0, 1.2), (4, 8)]
-        @test index_for_sec_spans(spans, 1) == [0:1, 4:8]
-        @test isnothing(learn_loop(LEHRER_DEMO_SONG, [(8.5, 13)]; num_repetitions=2,
+        spans = [(0, 1.2), (2, 3)]
+        @test index_for_sec_spans(spans, 1) == [1:1, 2:3]
+        @test isnothing(learn_loop(fname, [(0.5, 2.5)]; num_repetitions=2,
                                    iteration_mode=:sequential))
     end
 end
