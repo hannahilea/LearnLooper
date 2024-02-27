@@ -16,10 +16,10 @@ Pkg.instantiate()
 using LearnLooper
 
 # Learn text!
-learn_loop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:cumulative)
+learn_loop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:sequential)
 
 # Learn pi!
-learn_loop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:cumulative)
+learn_loop(pi + 0, [1:4, 5:8]; num_repetitions=2, iteration_mode=:cumulative)
 
 # Learn a song!
 learn_loop(LearnLooper.LEHRER_DEMO_SONG, LearnLooper.LEHRER_DEMO_SONG_SPANS;
@@ -73,3 +73,9 @@ Housekeeping:
 
 
 
+
+                #   (12.81, 13.66), 
+                #   (13.66, 14.75),
+                #   (14.75, 15.75),
+                #   (15.72, 16.8)
+                  

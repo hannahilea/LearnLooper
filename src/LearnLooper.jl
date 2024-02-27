@@ -6,10 +6,6 @@ using TimeSpans
 
 export learn_loop
 
-const LEHRER_DEMO_SONG = joinpath(pkgdir(LearnLooper), "assets", "tom_lehrer_elements.wav")
-const LEHRER_DEMO_SONG_SPANS = [(8.5, 13)] #TODO: MORE OF THESE
-const LEHRER_DEMO_VOCALS = joinpath(pkgdir(LearnLooper), "assets", "tom_lehrer_vocals.wav")
-
 struct Audio
     sample_rate::Any
     samples::Any
@@ -60,7 +56,7 @@ function collect_span(i_span, spans; iteration_mode)
     if iteration_mode == :cumulative
         current_spans = spans[1:i_span]
         return length(current_spans) == 1 ? only(current_spans) :
-               collect(Iterators.flatten(spans))
+               collect(Iterators.flatten(spans[1:i_span]))
     end
     if iteration_mode != :sequential
         @warn "`iteration_mode=$mode` is unsupported; falling back to `:sequential` (options: `sequential`, `cumulative`)"
@@ -103,7 +99,7 @@ end
 - note that non-contiguous `spans` may result in a click in cumulative iteration mode
 """
 function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
-                    interrepeat_pause=0.1, speed=1)
+                    interrepeat_pause=0, speed=1)
     #TODO-future: safety-check the iteration_mode, num_repetitions, span v input length
     #TODO-future: if playing text, warn if not mac
     @info "Welcome to the LearnLooper: prepare to learn by looping!" num_repetitions iteration_mode interrepeat_pause
@@ -114,6 +110,7 @@ function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
     for i in eachindex(spans)
         span = collect_span(i, spans; iteration_mode)
         subinput = _subinput(input, span)
+
         for _ in 1:num_repetitions
             play(subinput; speed)
             pause(subinput; speed)
@@ -128,3 +125,5 @@ function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
 end
 
 end # module LearnLooper
+
+
