@@ -37,6 +37,8 @@ Housekeeping:
 
 #### 27 Feb
 - Restructure repo and move Julia library into a subdir
+- Add GHA: docs, codecov, CI, linting, badges
+- Fix tests to remove hardcoded example song
 
 #### 22 Feb
 - Set up first demo

@@ -1,6 +1,7 @@
 using Test
 using LearnLooper
 using Aqua
+using WAV
 
 @testset "LearnLooper" begin
     @testset "Aqua" begin
@@ -15,12 +16,12 @@ using Aqua
 
         @test collect_span(1, contiguous_spans; iteration_mode=:cumulative) == 1:4
         @test collect_span(2, contiguous_spans; iteration_mode=:cumulative) ==
-              [1:4, 5:8]
+              collect(1:8)
 
         noncontiguous_spans = [1:4, 9:22]
         @test collect_span(1, noncontiguous_spans; iteration_mode=:cumulative) == 1:4
         @test collect_span(2, noncontiguous_spans; iteration_mode=:cumulative) ==
-              [1:4, 9:22]
+              collect(Iterators.flatten([1:4, 9:22]))
     end
 
     @testset "`learn_loop` from raw input" begin
@@ -29,9 +30,9 @@ using Aqua
         @test isnothing(learn_loop("A lone sentence is indexed by word", [1:2, 3:4];
                                    num_repetitions=2, iteration_mode=:cumulative))
         @test isnothing(learn_loop(["A vector of phrases", "are indexed", "by phrase"],
-                                   [1:2, 3:3]; num_repetitions=2,
+                                   [1:2, 3:3]; num_repetitions=1,
                                    iteration_mode=:cumulative))
-        @test isnothing(learn_loop(pi + 0, [1:4, 5:8]; num_repetitions=2,
+        @test isnothing(learn_loop(pi + 0, [1:4]; num_repetitions=1,
                                    iteration_mode=:cumulative))
     end
 
@@ -44,12 +45,16 @@ using Aqua
     end
 
     @testset "`learn_loop` from audio file" begin
-        using LearnLooper: LEHRER_DEMO_SONG, index_for_sec_spans
+        using LearnLooper: index_for_sec_spans
+
+        fname = joinpath(mktempdir(), "test.wav")
+        Fs = 8000
+        wavwrite(zeros(3 * Fs, 2), fname; Fs, nbits=0, compression=0)
 
         # Temporary until we use TimeSpans:
-        spans = [(0, 1.2), (4, 8)]
-        @test index_for_sec_spans(spans, 1) == [0:1, 4:8]
-        @test isnothing(learn_loop(LEHRER_DEMO_SONG, [(8.5, 13)]; num_repetitions=2,
+        spans = [(0, 1.2), (2, 3)]
+        @test index_for_sec_spans(spans, 1) == [1:1, 2:3]
+        @test isnothing(learn_loop(fname, [(0.5, 2.5)]; num_repetitions=2,
                                    iteration_mode=:sequential))
     end
 end

@@ -36,7 +36,13 @@ function play(input::Audio; volume_scale=1, speed)
     if speed != 1
         @warn "Not yet implemented!"
     end
-    wavplay(volume_scale .* samples, sample_rate)
+
+    #TODO-future: fix cross-platform playback!!
+    try
+        wavplay(volume_scale .* samples, sample_rate)
+    catch err
+        @warn "wavplay seems to be broken for your system...." ref = "https://github.com/dancasimiro/WAV.jl/issues/89#issuecomment-719960504" err
+    end
     return nothing
 end
 
@@ -120,5 +126,3 @@ function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
 end
 
 end # module LearnLooper
-
-
