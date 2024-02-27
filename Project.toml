@@ -4,9 +4,15 @@ authors = ["hannahilea <hannahilea@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
+Sound = "afe32e48-2646-410f-a1df-ae97debbc86b"
+TimeSpans = "bb34ddd2-327f-4c4a-bfb0-c98fc494ece1"
+WAV = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"
 
 [compat]
 Aqua = "0.6"
+Sound = "0.5.0"
+TimeSpans = "1.1.0"
+WAV = "1.2.0"
 julia = "1.7.2"
 
 [extras]

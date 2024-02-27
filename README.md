@@ -15,17 +15,25 @@ Pkg.instantiate()
 
 using LearnLooper
 
-learn_demo()
+# Learn text!
+learn_loop("Learn this big long sentence, one phrase at a time", [1:1, 2:5, 6:10]; num_repetitions=2, iteration_mode=:sequential)
+
+# Learn pi!
+learn_loop(pi + 0, [1:4, 5:8]; num_repetitions=2, iteration_mode=:cumulative)
+
+# Learn a song!
+learn_loop(LearnLooper.LEHRER_DEMO_SONG, LearnLooper.LEHRER_DEMO_SONG_SPANS;
+           num_repetitions=2, iteration_mode=:sequential)
 ```
 In the REPL, do 
 ```
-?learn_demo
+?learn_loop
 ```
-for list of parameters to play with. These include ways to indicate number of repetitions and playback modes (e.g., sequential segments vs cumulative segments), as long as the ability to pass in your own segments for the demo input.
+for full list of parameters to play with. These include ways to indicate number of repetitions and playback modes (e.g., sequential segments vs cumulative segments), as long as the ability to pass in your own segments for the demo input.
 
-When you're learn your own input media, see the docstring for `learn`:
+See the docstring for `learn_loop` for more options:
 ```
-?learn
+?learn_loop
 ```
 
 ## Dev log 
@@ -34,7 +42,9 @@ When you're learn your own input media, see the docstring for `learn`:
 As a treat:
 - Set up params to control global playback speed, etc?
 - Set up notebook to play with controls while learning/run demo?
-- Find/use package to play audio files
+- Find/use package to better vocode/adjust speed
+- Support backing track(s)/drone
+- Support loading annotation files (as created in an external app)
 
 Housekeeping:
 - Make testing nicer (don't actually play audio, output what *was* played)
@@ -47,6 +57,8 @@ Housekeeping:
 - Fully support `say` behavior (mac only)
 - Support strings, vector of strings, numbers
 - Add test for above plus reading in text file
+- Added .wav support!! 
+- Added (lousy) speed support!
 
 ### 20 Feb
 - Make devlog, update README
@@ -61,3 +73,9 @@ Housekeeping:
 
 
 
+
+                #   (12.81, 13.66), 
+                #   (13.66, 14.75),
+                #   (14.75, 15.75),
+                #   (15.72, 16.8)
+                  
