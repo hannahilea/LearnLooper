@@ -12,7 +12,7 @@ jobs:
         subpackage: ["LearnLooper.jl"]
     steps:
       - name: Checkout gh-pages branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: gh-pages
       - name: Delete preview and history + push changes from subdir docs - ${{ matrix.subpackage }}
