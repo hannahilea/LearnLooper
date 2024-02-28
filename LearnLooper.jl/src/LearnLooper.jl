@@ -101,7 +101,7 @@ end
 
 """
     learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
-               interrepeat_pause=0, speed=1) -> nothing
+               interrepeat_pause=0, speed=1, dryrun=false) -> nothing
 
 Present the `spans` of `input` as a series of calls ([`play`](@ref)) and responses
 [`pause`](@ref)). This is the end-user entrypoint into LearnLooper.jl.
@@ -113,35 +113,49 @@ Arguments:
 * `iteration_mode`: TODO-docstring
 * `interrepeat_pause`: TODO-docstring
 * `speed`: TODO-docstring
+* `dryrun`: TODO-docstring
 
 #TODO-future: Describe:
 - clarify difference between 0 and 1 repetitions; consider "num_playbacks" or similar
 - note that non-contiguous `spans` may result in a click in cumulative iteration mode
 """
 function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
-                    interrepeat_pause=0, speed=1)
+                    interrepeat_pause=0, speed=1, dryrun=false)
     #TODO-future: safety-check the iteration_mode, num_repetitions, span v input length
     #TODO-future: if playing text, warn if not mac
-    @info "Welcome to the LearnLooper: prepare to learn by looping!" num_repetitions iteration_mode interrepeat_pause
+    @debug "Welcome to the LearnLooper: prepare to learn by looping!" num_repetitions iteration_mode interrepeat_pause speed dryrun
 
     input = preprocess_input(input)
     isa(input, WAVData) && (spans = index_for_sec_spans(spans, input.sample_rate))
 
+    #TODO-future: appending to this vector is not good BUT we prob want to refactor 
+    # this to be "make a dataframe plan" -> "play dataframe plan" rather than 
+    # what it currently is---so okay to do the shady thing for now
+    played = []
     for i in eachindex(spans)
         span = collect_span(i, spans; iteration_mode)
         subinput = _subinput(input, span)
 
         for _ in 1:num_repetitions
+            append!(played, [(:play, span), (:pause, span)])
+            interrepeat_pause != 0 && push!(played, (:sleep, interrepeat_pause))
+            dryrun && continue
             play(subinput; speed)
             pause(subinput; speed)
             sleep(interrepeat_pause)
         end
 
         # If no repetitions, just play the span and move on---do not pause between spans!!
-        num_repetitions == 0 && play(subinput; speed)
+        # TODO-future: expose as separate param
+        if num_repetitions == 0
+            push!(played, (:play, span))
+            interrepeat_pause != 0 && push!(played, (:sleep, interrepeat_pause))
+            dryrun && continue
+            play(subinput; speed)
+            sleep(interrepeat_pause)
+        end
     end
-    return nothing
-    #TODO: for testing, return vector of spans 
+    return played
 end
 
 end # module LearnLooper
