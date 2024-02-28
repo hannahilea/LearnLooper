@@ -28,12 +28,13 @@ As a treat:
 
 Housekeeping:
 - Make testing nicer (don't actually play audio, output what *was* played)
-- Add codecov (+ badge)
-- Add docstrings to main entrypoints
 - Move printouts to debug mode
 - Safety ~first~ last!
 
 ### Dev log 
+
+#### 28 Feb
+- Update docstrings
 
 #### 27 Feb
 - Restructure repo and move Julia library into a subdir
