@@ -2,7 +2,10 @@ module LearnLooper
 
 using WAV
 
-export learn_loop
+export learn_loop, launch_gui
+
+include("gui.jl")
+using .LearnLooperGUI
 
 struct Audio
     sample_rate::Any
