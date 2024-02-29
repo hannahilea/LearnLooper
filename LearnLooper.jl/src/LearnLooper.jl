@@ -49,7 +49,7 @@ function play(input::WAVData; volume=1, speed)
     try
         wavplay(volume .* samples, sample_rate)
     catch err
-        @warn "wavplay seems to be broken for your system...." ref = "https://github.com/dancasimiro/WAV.jl/issues/89#issuecomment-719960504" err
+        # @warn "wavplay seems to be broken for your system...." ref = "https://github.com/dancasimiro/WAV.jl/issues/89#issuecomment-719960504" err
     end
     return nothing
 end
@@ -117,13 +117,14 @@ Arguments:
 * `interrepeat_pause`: TODO-docstring
 * `speed`: TODO-docstring
 * `dryrun`: TODO-docstring
+* `state_callback`: TODO-docstring
 
 #TODO-future: Describe:
 - clarify difference between 0 and 1 repetitions; consider "num_playbacks" or similar
 - note that non-contiguous `spans` may result in a click in cumulative iteration mode
 """
 function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
-                    interrepeat_pause=0, speed=1, dryrun=false)
+                    interrepeat_pause=0, speed=1, dryrun=false, state_callback=_ -> nothing)
     #TODO-future: safety-check the iteration_mode, num_repetitions, span v input length
     #TODO-future: if playing text, warn if not mac
     @debug "Welcome to the LearnLooper: prepare to learn by looping!" num_repetitions iteration_mode interrepeat_pause speed dryrun
@@ -136,6 +137,7 @@ function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
     # what it currently is---so okay to do the shady thing for now
     played = []
     for i in eachindex(spans)
+        state_callback(i)
         span = collect_span(i, spans; iteration_mode)
         subinput = _subinput(input, span)
 
@@ -143,7 +145,9 @@ function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
             append!(played, [(:play, span), (:pause, span)])
             interrepeat_pause != 0 && push!(played, (:sleep, interrepeat_pause))
             dryrun && continue
+            state_callback("Playing")
             play(subinput; speed)
+            state_callback("Pausing")
             pause(subinput; speed)
             sleep(interrepeat_pause)
         end
@@ -154,10 +158,13 @@ function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
             push!(played, (:play, span))
             interrepeat_pause != 0 && push!(played, (:sleep, interrepeat_pause))
             dryrun && continue
+            state_callback("Playing")
             play(subinput; speed)
+            state_callback("Pausing")
             sleep(interrepeat_pause)
         end
     end
+    state_callback("Done")
     return played
 end
 
