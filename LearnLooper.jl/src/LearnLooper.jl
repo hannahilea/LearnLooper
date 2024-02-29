@@ -25,8 +25,8 @@ Play `input` scaled to `volume`, at playback `speed` (where e.g. a speed of 2 is
 played twice as fast as the original). 
 
 !!! warn
-`input` that is not `WavData` is played back via the OS's text to speech 
-program, and is currently only supported on Mac .
+  `input` that is not `WavData` is played back via the OS's text to speech 
+  program, and is currently only supported on Mac .
 """
 function play(input; volume=1, speed)
     seg = string(input)

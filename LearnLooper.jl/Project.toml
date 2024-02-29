@@ -1,13 +1,17 @@
 name = "LearnLooper"
 uuid = "e89896d8-c5cb-49c4-9dca-99a75ba5130e"
 authors = ["hannahilea <hannahilea@users.noreply.github.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
+Mousetrap = "5deeb4b9-6e04-4da7-8b7f-c77fb1eae65e"
 WAV = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"
+libmousetrap_jll = "287f9a42-973b-50d0-ae32-9952e735a47d"
 
 [compat]
 Aqua = "0.6"
+libmousetrap_jll = "0.3.0"
+Mousetrap = "0.3.1"
 WAV = "1.2.0"
 julia = "1.7.2"
 
