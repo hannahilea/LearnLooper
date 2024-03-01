@@ -10,8 +10,6 @@ libmousetrap_jll = "287f9a42-973b-50d0-ae32-9952e735a47d"
 
 [compat]
 Aqua = "0.6"
-libmousetrap_jll = "0.3.0"
-Mousetrap = "0.3.1"
 WAV = "1.2.0"
 julia = "1.7.2"
 

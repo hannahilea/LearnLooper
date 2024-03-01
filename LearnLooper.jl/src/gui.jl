@@ -13,6 +13,7 @@ const DEFAULT_DARK_LIGHT_THEME = THEME_DEFAULT_LIGHT
 
 #TODO-future: update different demo path
 # TODO: combine these into some input struct type
+# Audio is The Killavil (jig) - as played by Patrick Bowling
 const INPUT_PATHS = [joinpath(pkgdir(LearnLooper), "..", "demos", "2024-02-29_RC2",
                               "KillavilJigSlowFlute.wav"),
                      joinpath(pkgdir(LearnLooper), "..", "demos", "2024-02-29_RC2",
