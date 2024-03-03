@@ -6,8 +6,6 @@ export launch_gui
 using LearnLooper
 using Gtk4
 
-# const DEFAULT_DARK_LIGHT_THEME = THEME_DEFAULT_LIGHT
-
 # I don't _love_ setting global vars, but that's where we're at right now.
 # Also, as long as we can only have one app at a time, it really shouldn't matter...
 
@@ -135,60 +133,93 @@ const SPANS = Ref{Any}(INPUT_SPANS[1])
 #     return nothing
 # end
 
-COUNTER = Ref(0)
+const COUNTER = Ref(0)
+
+function set_up_gui()     
+    box = GtkBox(:v; name="content_box")
+        
+    # Add buttons to UI
+    dry_run_button = GtkButton("Dry run \n 🚧")
+    push!(box, dry_run_button)
+
+    play_pause_button = GtkButton("Learn loop! \n ⏯️")
+    push!(box, play_pause_button)
+    # TODO: connect to on_play_pause_click
+    
+    # Finally, set up the main app window itself!
+    win = GtkWindow("LearnLooper!", 420, 200, false) # Last arg is "resizable" TODO-future: add Gtk function for setting via kwargs
+    push!(win, box_o_stuff)
+    return win
+end
+
+function on_play_pause_click(widget)
+    stop_time = time() + 3
+
+    # g_timeout_add can be used to periodically call a function from the main loop
+    Gtk4.GLib.g_timeout_add(50) do  # create a function that will be called every 50 milliseconds
+        label.label = "counter: $(COUNTER[])"
+        return time() < stop_time   # return true to keep calling the function, false to stop
+    end
+
+    Threads.@spawn begin
+        # Do work
+
+        COUNTER[] = 0
+        while time() < stop_time
+            COUNTER[] += 1
+        end
+
+        tid = Threads.threadid()
+        tp = Threads.threadpool()
+
+        # Interacting with GTK from a thread other than the main thread is
+        # generally not allowed, so we register an idle callback instead.
+        Gtk4.GLib.g_idle_add() do
+            
+            ent.text = "I counted to $(COUNTER[]) in thread $tid in the $tp threadpool!"
+            return false
+        end
+    end
+end
+
+# TODO-remove: copied from multithread example
+function on_button_click(widget)
+    start(sp)
+    stop_time = time() + 3
+
+    # g_timeout_add can be used to periodically call a function from the main loop
+    Gtk4.GLib.g_timeout_add(50) do  # create a function that will be called every 50 milliseconds
+        label.label = "counter: $(COUNTER[])"
+        return time() < stop_time   # return true to keep calling the function, false to stop
+    end
+
+    Threads.@spawn begin
+        # Do work
+
+        COUNTER[] = 0
+        while time() < stop_time
+            COUNTER[] += 1
+        end
+
+        tid = Threads.threadid()
+        tp = Threads.threadpool()
+
+        # Interacting with GTK from a thread other than the main thread is
+        # generally not allowed, so we register an idle callback instead.
+        Gtk4.GLib.g_idle_add() do
+            stop(sp)
+            ent.text = "I counted to $(COUNTER[]) in thread $tid in the $tp threadpool!"
+            return false
+        end
+    end
+end
 
 function launch_gui()
     if Threads.nthreads() == 1 && Threads.nthreads(:interactive) < 1
         @warn("This example is intended to be run with multiple threads enabled, e.g. `julia --threads=2`")
     end
 
-    btn = GtkButton("Start")
-    sp = GtkSpinner()
-    ent = GtkEntry(; hexpand=true)
-    label = GtkLabel("")
-
-    grid = GtkGrid()
-    lab = GtkLabel("")
-    grid[1:2, 1] = lab
-    @idle_add lab.label = "The GTK loop is running in thread $(Threads.threadid()) ($(Threads.threadpool()) threadpool)"
-    grid[1, 2] = btn
-    grid[2, 2] = sp
-    grid[1:2, 3] = ent
-    grid[1:2, 4] = label
-
-    signal_connect(btn, "clicked") do widget
-        start(sp)
-        stop_time = time() + 3
-
-        # g_timeout_add can be used to periodically call a function from the main loop
-        Gtk4.GLib.g_timeout_add(50) do  # create a function that will be called every 50 milliseconds
-            label.label = "counter: $(COUNTER[])"
-            return time() < stop_time   # return true to keep calling the function, false to stop
-        end
-
-        Threads.@spawn begin
-            # Do work
-
-            global COUNTER[] = 0
-            while time() < stop_time
-                global COUNTER[] += 1
-            end
-
-            tid = Threads.threadid()
-            tp = Threads.threadpool()
-
-            # Interacting with GTK from a thread other than the main thread is
-            # generally not allowed, so we register an idle callback instead.
-            Gtk4.GLib.g_idle_add() do
-                stop(sp)
-                ent.text = "I counted to $(COUNTER[]) in thread $tid in the $tp threadpool!"
-                return false
-            end
-        end
-    end
-
-    win = GtkWindow(grid, "Threads with updating counter", 420, 200)
-    return nothing
+    return set_up_gui()
 end
 
 end # module LearnLooperGUI
