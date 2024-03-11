@@ -17,7 +17,7 @@ function WAVData(file)
     return WAVData(fs, y)
 end
 
-Base.@kwdef struct Config
+Base.@kwdef mutable struct Config
     num_repetitions::Union{Missing,Int} = 2
     iteration_mode = :sequential
     interrepeat_pause = 0
@@ -30,7 +30,6 @@ struct PlayStateRecord
     state::Symbol
     span::Any
 end
-
 
 #####
 ##### Base extensions
