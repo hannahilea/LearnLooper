@@ -4,9 +4,6 @@ using WAV
 
 export learn_loop, launch_gui
 
-include("gui.jl")
-using .LearnLooperGUI
-
 struct WAVData
     sample_rate::Any
     samples::Any
@@ -188,5 +185,8 @@ function learn_loop(input, spans; config::Config, state_callback::Function=_ -> 
     state_callback(PlayStateRecord(:complete, missing))
     return nothing
 end
+
+include("gui.jl")
+using .LearnLooperGUI
 
 end # module LearnLooper

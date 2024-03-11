@@ -22,15 +22,13 @@ const INPUT_PATH = Ref{String}(INPUT_PATHS[1])
 const SPANS = Ref{Any}(INPUT_SPANS[1])
 const UI_CONFIG = LearnLooper.Config()
 
-struct PlaybackState
-
 #####
 ##### Behavior
 #####
 
-const PLAYBACK_THREAD = Ref{Union{Nothing,String}}(nothing)
+const PLAYBACK_THREAD = Ref{Union{Nothing,Int64}}(nothing)
 
-function on_play_pause_clicked(widgetptr, user_data)
+function on_play_pause_clicked(_, data)
     @debug "play/pause clicked"
 
     # # g_timeout_add can be used to periodically call a function from the main loop
@@ -39,32 +37,44 @@ function on_play_pause_clicked(widgetptr, user_data)
     #     return time() < stop_time   # return true to keep calling the function, false to stop
     # end
 
-    if !isnothing(PLAYBACK_THREAD)
+    if !isnothing(PLAYBACK_THREAD[])
         @info "Is playing! Can't cancel yet :("
+        data.loop_state_label.label = "NO CAN DO (can't cancel playback yet)"
         #TODO-future: support canceling
     else
+        @info "Started playing (allegedly)"
+        data.button.label = "Currently playing!"
+        data.loop_state_label.label = "button pushed"
         Threads.@spawn begin
             tid = Threads.threadid()
-            PLAYBACK_THREAD[] = tid
+            Gtk4.GLib.g_idle_add() do
+                print("Setting playback thread to $tid")
+                PLAYBACK_THREAD[] = tid
+                return false # #TODO: does this signal that the callback is done? or something? 
+            end
+            
             @info tid typeof(tid)
-            tp = Threads.threadpool()
-
+           
             # Interacting with GTK from a thread other than the main thread is
             # generally not allowed, so we register an idle callback instead.
             function state_callback(state)
+                @debug "Callback" state
                 Gtk4.GLib.g_idle_add() do
-                    print("Playback state: state", out)
-                    return false # #TODO: does this signal that the callback is done? or something? 
+                    @debug("Callback on main: ", state)
+                    data.loop_state_label.label = state.state
+                    return false
                 end
                 return nothing
             end
 
-            learn_loop(collect('a':'z'), [1:2, 3:4]; state_callback, config=copy(UI_CONFIG))
+            learn_loop(collect('a':'z'), [1:2, 3:4]; state_callback, config=deepcopy(UI_CONFIG))
             
             Gtk4.GLib.g_idle_add() do
-                print("Done playing back on thread $tid in the $tp threadpool: ", out)
+                print("Done playing back on thread $tid ")
                 PLAYBACK_THREAD[] = nothing
-                return false # pretty sure this signals that our thread is done?? todo: check
+                data.button.label = "Learn loop! (i.e. Play)"
+                data.loop_state_label.label = "nothing"
+                return false
             end
         end
     end
@@ -72,9 +82,9 @@ function on_play_pause_clicked(widgetptr, user_data)
 end
 
 function on_dry_run_clicked(_, data)
-    dryrun_mode = DRY_RUN_MODE[]
+    dryrun_mode = UI_CONFIG.dryrun
     println("Dry run mode ", dryrun_mode ? "disabled" : "enabled", "!")
-    DRY_RUN_MODE[] = !dryrun_mode
+    UI_CONFIG.dryrun = !dryrun_mode
     data.button.label = dryrun_mode ? "Enable dry run mode" : "Disable dry run mode"
     return nothing
 end
@@ -87,13 +97,16 @@ function set_up_gui()
     box = GtkBox(:v; name="content_box")
 
     # Add buttons to UI
-    dry_run_button = GtkButton("Dry run \n 🚧")
+    dry_run_button = GtkButton(UI_CONFIG.dryrun ? "Disable dry run mode" : "Enable dry run mode")
     push!(box, dry_run_button)
     Gtk4.on_clicked(on_dry_run_clicked, dry_run_button, (button=dry_run_button,))
 
+    loop_state_label = Gtk4.GtkLabel("Loop state: nothing")
+    push!(box, loop_state_label)
+
     play_pause_button = GtkButton("Learn loop! \n ⏯️")
     push!(box, play_pause_button)
-    Gtk4.on_clicked(on_play_pause_clicked, play_pause_button, ("foo", "bar"))
+    Gtk4.on_clicked(on_play_pause_clicked, play_pause_button, (button=play_pause_button, loop_state_label))
 
     # Finally, set up the main app window itself!
     win = GtkWindow("LearnLooper!", 420, 200, false) # Last arg is "resizable" TODO-future: add Gtk function for setting via kwargs
