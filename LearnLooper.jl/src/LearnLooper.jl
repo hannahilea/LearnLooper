@@ -17,15 +17,42 @@ function WAVData(file)
     return WAVData(fs, y)
 end
 
+Base.@kwdef struct Config
+    num_repetitions::Union{Missing,Int} = 2
+    iteration_mode = :sequential
+    interrepeat_pause = 0
+    pause_for_response::Bool = true
+    speed = 1
+    dryrun::Bool = false
+end
+
+struct PlayStateRecord
+    state::Symbol
+    span::Any
+end
+
+
+#####
+##### Base extensions
+#####
+
+for pred in (:(==), :(isequal)),
+    T in [PlayStateRecord, Config]
+
+    @eval function Base.$pred(x::$T, y::$T)
+        return all(f -> $pred(getproperty(x, f), getproperty(y, f)), fieldnames($T))
+    end
+end
+
 """
     play(input; volume=1, speed) -> nothing
     play(input::WAVData; volume=1, speed) -> nothing
 
 Play `input` scaled to `volume`, at playback `speed` (where e.g. a speed of 2 is
-played twice as fast as the original). 
+loop_record twice as fast as the original). 
 
 !!! warn
-  `input` that is not `WavData` is played back via the OS's text to speech 
+  `input` that is not `WavData` is loop_record back via the OS's text to speech 
   program, and is currently only supported on Mac .
 """
 function play(input; volume=1, speed)
@@ -91,11 +118,25 @@ function index_for_sec_spans(spans, sample_rate)
     end
 end
 
-_subinput(input, span) = input[span] # TODO-future: use view instead where valid
+_slice(input, span) = input[span] # TODO-future: use view instead where valid
 
-function _subinput(input::WAVData, span)
+function _slice(input::WAVData, span)
     # TODO lol there has to be a better way :) 
     return WAVData(input.sample_rate, view(input.samples, span, :))
+end
+
+function validate_input(input, spans)
+    #TODO-future: safety-check span v input length
+    #TODO-future: if playing text, warn if not mac
+    return nothing
+end
+
+function prepare_input(input, spans)
+    input = preprocess_input(input)
+    isa(input, WAVData) && (spans = index_for_sec_spans(spans, input.sample_rate))
+
+    validate_input(input, spans)
+    return input, spans
 end
 
 #####
@@ -103,8 +144,8 @@ end
 #####
 
 """
-    learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
-               interrepeat_pause=0, speed=1, dryrun=false) -> nothing
+    learn_loop(input, spans; config::Config, 
+               state_callback::Function = _ -> nothing) -> nothing
 
 Present the `spans` of `input` as a series of calls ([`play`](@ref)) and responses
 [`pause`](@ref)). This is the end-user entrypoint into LearnLooper.jl.
@@ -112,60 +153,40 @@ Present the `spans` of `input` as a series of calls ([`play`](@ref)) and respons
 Arguments:
 * `input`: TODO-docstring
 * `spans`: TODO-docstring
-* `num_repetitions`: TODO-docstring
-* `iteration_mode`: TODO-docstring
-* `interrepeat_pause`: TODO-docstring
-* `speed`: TODO-docstring
-* `dryrun`: TODO-docstring
-* `state_callback`: TODO-docstring
+* `config::Config`: See [`Config`](@ref) for parameters.
+* `state_callback`: Function that takes [`PlayStateRecord`](@ref) as input and 
+    returns `nothing`; called whenever internal learning state (play/pause) changes.
+    Final callback at conclusion of `learn_loop` will always pass in 
+    `PlayStateRecord(:complete,missing)`.
 
-#TODO-future: Describe:
-- clarify difference between 0 and 1 repetitions; consider "num_playbacks" or similar
-- note that non-contiguous `spans` may result in a click in cumulative iteration mode
+Non-contiguous `spans` may result in a click in cumulative iteration mode.
 """
-function learn_loop(input, spans; num_repetitions=2, iteration_mode=:sequential,
-                    interrepeat_pause=0, speed=1, dryrun=false, state_callback=_ -> nothing)
-    #TODO-future: safety-check the iteration_mode, num_repetitions, span v input length
-    #TODO-future: if playing text, warn if not mac
-    @debug "Welcome to the LearnLooper: prepare to learn by looping!" num_repetitions iteration_mode interrepeat_pause speed dryrun
+function learn_loop(input, spans; config::Config, state_callback::Function=_ -> nothing)
+    input, spans = prepare_input(input, spans)
 
-    input = preprocess_input(input)
-    isa(input, WAVData) && (spans = index_for_sec_spans(spans, input.sample_rate))
-
-    #TODO-future: appending to this vector is not good BUT we prob want to refactor 
-    # this to be "make a dataframe plan" -> "play dataframe plan" rather than 
-    # what it currently is---so okay to do the shady thing for now
-    played = []
     for i in eachindex(spans)
-        state_callback(i)
-        span = collect_span(i, spans; iteration_mode)
-        subinput = _subinput(input, span)
+        span = collect_span(i, spans; config.iteration_mode)
+        slice = _slice(input, span)
 
-        for _ in 1:num_repetitions
-            append!(played, [(:play, span), (:pause, span)])
-            interrepeat_pause != 0 && push!(played, (:sleep, interrepeat_pause))
-            dryrun && continue
-            state_callback("Playing")
-            play(subinput; speed)
-            state_callback("Pausing")
-            pause(subinput; speed)
-            sleep(interrepeat_pause)
-        end
+        i_rep = 1
+        while ismissing(config.num_repetitions) || i_rep <= config.num_repetitions
+            state_callback(PlayStateRecord(:playing, span))
+            config.dryrun || play(slice; config.speed)
 
-        # If no repetitions, just play the span and move on---do not pause between spans!!
-        # TODO-future: expose as separate param
-        if num_repetitions == 0
-            push!(played, (:play, span))
-            interrepeat_pause != 0 && push!(played, (:sleep, interrepeat_pause))
-            dryrun && continue
-            state_callback("Playing")
-            play(subinput; speed)
-            state_callback("Pausing")
-            sleep(interrepeat_pause)
+            if config.pause_for_response
+                state_callback(PlayStateRecord(:pausing, span))
+                config.dryrun || pause(slice; config.speed)
+            end
+
+            if config.interrepeat_pause != 0
+                state_callback(PlayStateRecord(:pausing, config.interrepeat_pause))
+                config.dryrun || sleep(config.interrepeat_pause)
+            end
+            i_rep += 1
         end
     end
-    state_callback("Done")
-    return played
+    state_callback(PlayStateRecord(:complete, missing))
+    return nothing
 end
 
 end # module LearnLooper

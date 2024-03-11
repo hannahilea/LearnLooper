@@ -24,70 +24,104 @@ using WAV
               collect(Iterators.flatten([1:4, 9:22]))
     end
 
-    #TODO-future: split learn_loop tests into component tests 
     @testset "`learn_loop` from raw input" begin
-        dryrun = true
-        output = learn_loop(collect('a':'z'), [1:2, 3:4]; num_repetitions=2,
-                            iteration_mode=:cumulative, dryrun)
-        @test isequal(output,
-                      [(:play, 1:2), (:pause, 1:2),
-                       (:play, 1:2), (:pause, 1:2),
-                       (:play, [1, 2, 3, 4]),
-                       (:pause, [1, 2, 3, 4]),
-                       (:play, [1, 2, 3, 4]),
-                       (:pause, [1, 2, 3, 4])])
+        # Set up testing 
+        output_record = []
+        state_callback = state -> push!(output_record, state)
 
-        output = learn_loop("A lone sentence is indexed by word", [1:2, 3:4];
-                            num_repetitions=2, iteration_mode=:cumulative, dryrun)
-        @test isequal(output,
-                      [(:play, 1:2), (:pause, 1:2), (:play, 1:2),
-                       (:pause, 1:2), (:play, [1, 2, 3, 4]),
-                       (:pause, [1, 2, 3, 4]),
-                       (:play, [1, 2, 3, 4]),
-                       (:pause, [1, 2, 3, 4])])
+        empty!(output_record)
+        learn_loop(collect('a':'z'), [1:2, 3:4]; state_callback,
+                   config=LearnLooper.Config(; num_repetitions=2,
+                                             iteration_mode=:cumulative,
+                                             dryrun=true))
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 1:2), (:pausing, 1:2),
+                           (:playing, 1:2), (:pausing, 1:2),
+                           (:playing, [1, 2, 3, 4]),
+                           (:pausing, [1, 2, 3, 4]),
+                           (:playing, [1, 2, 3, 4]),
+                           (:pausing, [1, 2, 3, 4]),
+                           (:complete, missing)]))
 
-        output = learn_loop(["A vector of phrases", "are indexed", "by phrase"],
-                            [1:2, 3:3]; num_repetitions=1,
-                            iteration_mode=:cumulative, dryrun)
-        @test isequal(output,
-                      [(:play, 1:2), (:pause, 1:2), (:play, [1, 2, 3]),
-                       (:pause, [1, 2, 3])])
+        empty!(output_record)
+        learn_loop("A lone sentence is indexed by word", [1:2, 3:4]; state_callback,
+                   config=LearnLooper.Config(;
+                                             num_repetitions=2, iteration_mode=:cumulative,
+                                             dryrun=true))
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 1:2), (:pausing, 1:2), (:playing, 1:2),
+                           (:pausing, 1:2), (:playing, [1, 2, 3, 4]),
+                           (:pausing, [1, 2, 3, 4]),
+                           (:playing, [1, 2, 3, 4]),
+                           (:pausing, [1, 2, 3, 4]),
+                           (:complete, missing)]))
 
-        output = learn_loop(pi + 0, [1:4]; num_repetitions=1,
-                            iteration_mode=:cumulative, dryrun)
-        @test isequal(output,
-                      [(:play, 1:4), (:pause, 1:4)])
+        empty!(output_record)
+        learn_loop(["A vector of phrases", "are indexed", "by phrase"],
+                   [1:2, 3:3]; state_callback,
+                   config=LearnLooper.Config(; num_repetitions=1,
+                                             iteration_mode=:cumulative, dryrun=true))
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 1:2), (:pausing, 1:2), (:playing, [1, 2, 3]),
+                           (:pausing, [1, 2, 3]), (:complete, missing)]))
 
-        output = learn_loop(pi + 0, [1:4, 2:3]; num_repetitions=0,
-                            iteration_mode=:cumulative, interrepeat_pause=0.1, dryrun)
-        @test isequal(output,
-                      [(:play, 1:4), (:sleep, 0.1), (:play, [1, 2, 3, 4, 2, 3]),
-                       (:sleep, 0.1)])
+        empty!(output_record)
+        learn_loop(pi + 0, [1:4]; state_callback,
+                   config=LearnLooper.Config(; num_repetitions=1,
+                                             iteration_mode=:cumulative, dryrun=true))
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 1:4), (:pausing, 1:4), (:complete, missing)]))
+
+        empty!(output_record)
+        learn_loop(pi + 0, [1:4, 2:3]; state_callback,
+                   config=LearnLooper.Config(; num_repetitions=1, pause_for_response=false,
+                                             iteration_mode=:cumulative,
+                                             interrepeat_pause=0.1, dryrun=true))
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 1:4), (:pausing, 0.1), (:playing, [1, 2, 3, 4, 2, 3]),
+                           (:pausing, 0.1), (:complete, missing)]))
     end
 
     @testset "`learn_loop` from file" begin
+        output_record = []
+        state_callback = state -> push!(output_record, state)
         f = joinpath(pkgdir(LearnLooper), "README.md")
-        output = learn_loop(read(f, String), [1:2, 3:4]; num_repetitions=2,
-                            iteration_mode=:cumulative, dryrun=true)
-        @test isequal(output,
-                      [(:play, 1:2), (:pause, 1:2),
-                       (:play, 1:2), (:pause, 1:2),
-                       (:play, [1, 2, 3, 4]),
-                       (:pause, [1, 2, 3, 4]),
-                       (:play, [1, 2, 3, 4]),
-                       (:pause, [1, 2, 3, 4])])
+        learn_loop(read(f, String), [1:2, 3:4]; state_callback,
+                   config=LearnLooper.Config(; num_repetitions=2,
+                                             iteration_mode=:cumulative, dryrun=true))
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 1:2), (:pausing, 1:2),
+                           (:playing, 1:2), (:pausing, 1:2),
+                           (:playing, [1, 2, 3, 4]),
+                           (:pausing, [1, 2, 3, 4]),
+                           (:playing, [1, 2, 3, 4]),
+                           (:pausing, [1, 2, 3, 4]), (:complete, missing)]))
 
-        output = learn_loop(readlines(f), [1:2, 5:5]; num_repetitions=2,
-                            iteration_mode=:cumulative, dryrun=true)
-        @test isequal(output,
-                      [(:play, 1:2), (:pause, 1:2),
-                       (:play, 1:2), (:pause, 1:2),
-                       (:play, [1, 2, 5]), (:pause, [1, 2, 5]),
-                       (:play, [1, 2, 5]), (:pause, [1, 2, 5])])
+        empty!(output_record)
+        learn_loop(readlines(f), [1:2, 5:5]; state_callback,
+                   config=LearnLooper.Config(; num_repetitions=2,
+                                             iteration_mode=:cumulative, dryrun=true))
+
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 1:2), (:pausing, 1:2),
+                           (:playing, 1:2), (:pausing, 1:2),
+                           (:playing, [1, 2, 5]), (:pausing, [1, 2, 5]),
+                           (:playing, [1, 2, 5]), (:pausing, [1, 2, 5]),
+                           (:complete, missing)]))
     end
 
     @testset "`learn_loop` from audio file" begin
         using LearnLooper: index_for_sec_spans
+
+        output_record = []
+        state_callback = state -> push!(output_record, state)
 
         fname = joinpath(mktempdir(), "test.wav")
         Fs = 8000
@@ -96,10 +130,13 @@ using WAV
         # Temporary until we use TimeSpans:
         spans = [(0, 1.2), (2, 3)]
         @test index_for_sec_spans(spans, 1) == [1:1, 2:3]
-        output = learn_loop(fname, [(0.5, 2.5)]; num_repetitions=2,
-                            iteration_mode=:sequential)
-        @test isequal(output,
-                      [(:play, 4000:20000), (:pause, 4000:20000), (:play, 4000:20000),
-                       (:pause, 4000:20000)])
+        learn_loop(fname, [(0.5, 2.5)];state_callback, 
+                   config=LearnLooper.Config(; num_repetitions=2,
+                                             iteration_mode=:sequential, dryrun=true))
+        @test isequal(output_record,
+                      map(x -> LearnLooper.PlayStateRecord(x...),
+                          [(:playing, 4000:20000), (:pausing, 4000:20000),
+                           (:playing, 4000:20000), (:pausing, 4000:20000), 
+                           (:complete, missing)]))
     end
 end
