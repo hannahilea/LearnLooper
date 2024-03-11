@@ -130,13 +130,13 @@ using WAV
         # Temporary until we use TimeSpans:
         spans = [(0, 1.2), (2, 3)]
         @test index_for_sec_spans(spans, 1) == [1:1, 2:3]
-        learn_loop(fname, [(0.5, 2.5)];state_callback, 
+        learn_loop(fname, [(0.5, 2.5)]; state_callback,
                    config=LearnLooper.Config(; num_repetitions=2,
                                              iteration_mode=:sequential, dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
                           [(:playing, 4000:20000), (:pausing, 4000:20000),
-                           (:playing, 4000:20000), (:pausing, 4000:20000), 
+                           (:playing, 4000:20000), (:pausing, 4000:20000),
                            (:complete, missing)]))
     end
 end

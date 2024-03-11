@@ -28,6 +28,7 @@ end
 
 struct PlayStateRecord
     state::Symbol
+    # i::Int #TODO: make this so 
     span::Any
 end
 
