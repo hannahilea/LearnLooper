@@ -32,12 +32,6 @@ const PLAYBACK_CONTROLLER = Ref{Union{Nothing,LearnLooper.PlaybackController}}(n
 function on_play_pause_clicked(_, data)
     @debug "play/pause clicked"
 
-    # # g_timeout_add can be used to periodically call a function from the main loop
-    # Gtk4.GLib.g_timeout_add(50) do  # create a function that will be called every 50 milliseconds
-    #     label.label = "counter: $(COUNTER[])"
-    #     return time() < stop_time   # return true to keep calling the function, false to stop
-    # end
-
     if !isnothing(PLAYBACK_CONTROLLER[])
         @debug "Attempting to cancel" PLAYBACK_CONTROLLER[]
         data.loop_state_label.label = "Cancelling playback"
