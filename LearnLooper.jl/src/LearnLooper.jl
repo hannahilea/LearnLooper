@@ -25,12 +25,13 @@ end
 
 Base.@kwdef mutable struct PlaybackController
     stop_asap::Bool = false # used to cancel mid-run
+    i_start_slice::Int = 1 # used to set the *starting* segment; is not updated mid-playback
 end
 
 struct PlayStateRecord
     state::Symbol
-    # i::Int #TODO: make this so 
     span::Any
+    i_span::Int
 end
 
 #####
@@ -119,11 +120,11 @@ function index_for_sec_spans(spans, sample_rate)
     end
 end
 
-_slice(input, span) = input[span] # TODO-future: use view instead where valid
+_slice(input, slice_span) = input[slice_span] # TODO-future: use view instead where valid
 
-function _slice(input::WAVData, span)
+function _slice(input::WAVData, slice_span)
     # TODO lol there has to be a better way :) 
-    return WAVData(input.sample_rate, view(input.samples, span, :))
+    return WAVData(input.sample_rate, view(input.samples, slice_span, :))
 end
 
 function validate_input(input, spans)
@@ -158,40 +159,44 @@ Arguments:
 * `state_callback`: Function that takes [`PlayStateRecord`](@ref) as input and 
     returns `nothing`; called whenever internal learning state (play/pause) changes.
     Final callback at conclusion of `learn_loop` will always have a state of either 
-    `PlayStateRecord(:completed,missing)` or `PlayStateRecord(:stopped,missing)`.
+    `PlayStateRecord(:completed,missing,i)` or `PlayStateRecord(:stopped,missing,i)` where 
+    `i` is the index of the final span played (which will be length(spans) + 1 if 
+    playback completed successfully).
 
 Non-contiguous `spans` may result in a click in cumulative iteration mode.
 """
 function learn_loop(input, spans; config::Config, controller = PlaybackController(), state_callback::Function=_ -> nothing)
     input, spans = prepare_input(input, spans)
-    @info "Started learn loop..." config controller
+    @debug "Started learn loop..." config controller
 
-    for i in eachindex(spans)
-        controller.stop_asap && continue
-        span = collect_span(i, spans; config.iteration_mode)
-        slice = _slice(input, span)
+    i_span = controller.i_start_slice
+    while i_span <= length(spans)
+        controller.stop_asap && break
+        slice_span = collect_span(i_span, spans; config.iteration_mode)
+        slice = _slice(input, slice_span)
 
         i_rep = 1
         while !(controller.stop_asap) && (ismissing(config.num_repetitions) || i_rep <= config.num_repetitions)
-            state_callback(PlayStateRecord(:playing, span))
+            state_callback(PlayStateRecord(:playing, slice_span, i_span))
             config.dryrun || play(slice; config.speed)
             controller.stop_asap && break
 
             if config.pause_for_response
-                state_callback(PlayStateRecord(:pausing, span))
+                state_callback(PlayStateRecord(:pausing, slice_span, i_span))
                 config.dryrun || pause(slice; config.speed)
                 controller.stop_asap && break
             end
 
             if config.interrepeat_pause != 0
-                state_callback(PlayStateRecord(:pausing, config.interrepeat_pause))
+                state_callback(PlayStateRecord(:pausing, config.interrepeat_pause, i_span))
                 config.dryrun || sleep(config.interrepeat_pause)
                 controller.stop_asap && break
             end
             i_rep += 1
         end
+        i_span += 1
     end
-    state_callback(PlayStateRecord(controller.stop_asap ? :stopped : :completed, missing))
+    state_callback(PlayStateRecord(controller.stop_asap ? :stopped : :completed, missing, i_span))
     return nothing
 end
 

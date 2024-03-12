@@ -39,17 +39,16 @@ function on_play_pause_clicked(_, data)
     # end
 
     if !isnothing(PLAYBACK_CONTROLLER[])
-        @info "Attempting to cancel" PLAYBACK_CONTROLLER[]
+        @debug "Attempting to cancel" PLAYBACK_CONTROLLER[]
         data.loop_state_label.label = "Cancelling playback"
-        PLAYBACK_CONTROLLER[].stop_asap = true # Will cause playback to stop at end of next loop
-        @info PLAYBACK_CONTROLLER[]
+        PLAYBACK_CONTROLLER[].stop_asap = true # Will stop playback at end of next loop
     else
-        @info "Started playing (allegedly)"
+        @debug "Started playing (allegedly)"
         data.button.label = "Currently playing!"
         data.loop_state_label.label = "button pushed"
         PLAYBACK_CONTROLLER[] = LearnLooper.PlaybackController()
         Threads.@spawn begin
-            @info "Thread id $(Threads.threadid())"
+            @debug "Thread id $(Threads.threadid())"
 
             # Interacting with GTK from a thread other than the main thread is
             # generally not allowed, so we register an idle callback instead.
@@ -57,7 +56,7 @@ function on_play_pause_clicked(_, data)
                 @debug "Callback" state
                 Gtk4.GLib.g_idle_add() do
                     @debug("Callback on main: ", state)
-                    data.loop_state_label.label = state.state
+                    data.loop_state_label.label = "$(state.state) span $(state.i_span)"
                     return false
                 end
                 return nothing
@@ -68,7 +67,7 @@ function on_play_pause_clicked(_, data)
                        config=LEARNLOOP_CONFIG)
 
             Gtk4.GLib.g_idle_add() do
-                @info "Done playing back"
+                @debug "Done playing back"
                 PLAYBACK_CONTROLLER[] = nothing
                 data.button.label = "Learn loop! (i.e. Play)"
                 data.loop_state_label.label = "nothing"

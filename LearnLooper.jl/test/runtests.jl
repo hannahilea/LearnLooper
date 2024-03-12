@@ -36,13 +36,13 @@ using WAV
                                              dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:2), (:pausing, 1:2),
-                           (:playing, 1:2), (:pausing, 1:2),
-                           (:playing, [1, 2, 3, 4]),
-                           (:pausing, [1, 2, 3, 4]),
-                           (:playing, [1, 2, 3, 4]),
-                           (:pausing, [1, 2, 3, 4]),
-                           (:completed, missing)]))
+                          [(:playing, 1:2, 1), (:pausing, 1:2, 1),
+                           (:playing, 1:2, 1), (:pausing, 1:2, 1),
+                           (:playing, [1, 2, 3, 4], 2),
+                           (:pausing, [1, 2, 3, 4], 2),
+                           (:playing, [1, 2, 3, 4], 2),
+                           (:pausing, [1, 2, 3, 4], 2),
+                           (:completed, missing, 3)]))
 
         empty!(output_record)
         learn_loop("A lone sentence is indexed by word", [1:2, 3:4]; state_callback,
@@ -51,12 +51,12 @@ using WAV
                                              dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:2), (:pausing, 1:2), (:playing, 1:2),
-                           (:pausing, 1:2), (:playing, [1, 2, 3, 4]),
-                           (:pausing, [1, 2, 3, 4]),
-                           (:playing, [1, 2, 3, 4]),
-                           (:pausing, [1, 2, 3, 4]),
-                           (:completed, missing)]))
+                          [(:playing, 1:2, 1), (:pausing, 1:2, 1), (:playing, 1:2, 1),
+                           (:pausing, 1:2, 1), (:playing, [1, 2, 3, 4], 2),
+                           (:pausing, [1, 2, 3, 4], 2),
+                           (:playing, [1, 2, 3, 4], 2),
+                           (:pausing, [1, 2, 3, 4], 2),
+                           (:completed, missing, 3)]))
 
         empty!(output_record)
         learn_loop(["A vector of phrases", "are indexed", "by phrase"],
@@ -65,8 +65,8 @@ using WAV
                                              iteration_mode=:cumulative, dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:2), (:pausing, 1:2), (:playing, [1, 2, 3]),
-                           (:pausing, [1, 2, 3]), (:completed, missing)]))
+                          [(:playing, 1:2, 1), (:pausing, 1:2, 1), (:playing, [1, 2, 3], 2),
+                           (:pausing, [1, 2, 3], 2), (:completed, missing, 3)]))
 
         empty!(output_record)
         learn_loop(pi + 0, [1:4]; state_callback,
@@ -74,7 +74,8 @@ using WAV
                                              iteration_mode=:cumulative, dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:4), (:pausing, 1:4), (:completed, missing)]))
+                          [(:playing, 1:4, 1), (:pausing, 1:4, 1),
+                           (:completed, missing, 2)]))
 
         empty!(output_record)
         learn_loop(pi + 0, [1:4, 2:3]; state_callback,
@@ -83,8 +84,9 @@ using WAV
                                              interrepeat_pause=0.1, dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:4), (:pausing, 0.1), (:playing, [1, 2, 3, 4, 2, 3]),
-                           (:pausing, 0.1), (:completed, missing)]))
+                          [(:playing, 1:4, 1), (:pausing, 0.1, 1),
+                           (:playing, [1, 2, 3, 4, 2, 3], 2),
+                           (:pausing, 0.1, 2), (:completed, missing, 3)]))
     end
 
     @testset "`learn_loop` from file" begin
@@ -96,12 +98,12 @@ using WAV
                                              iteration_mode=:cumulative, dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:2), (:pausing, 1:2),
-                           (:playing, 1:2), (:pausing, 1:2),
-                           (:playing, [1, 2, 3, 4]),
-                           (:pausing, [1, 2, 3, 4]),
-                           (:playing, [1, 2, 3, 4]),
-                           (:pausing, [1, 2, 3, 4]), (:completed, missing)]))
+                          [(:playing, 1:2, 1), (:pausing, 1:2, 1),
+                           (:playing, 1:2, 1), (:pausing, 1:2, 1),
+                           (:playing, [1, 2, 3, 4], 2),
+                           (:pausing, [1, 2, 3, 4], 2),
+                           (:playing, [1, 2, 3, 4], 2),
+                           (:pausing, [1, 2, 3, 4], 2), (:completed, missing, 3)]))
 
         empty!(output_record)
         learn_loop(readlines(f), [1:2, 5:5]; state_callback,
@@ -110,11 +112,11 @@ using WAV
 
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:2), (:pausing, 1:2),
-                           (:playing, 1:2), (:pausing, 1:2),
-                           (:playing, [1, 2, 5]), (:pausing, [1, 2, 5]),
-                           (:playing, [1, 2, 5]), (:pausing, [1, 2, 5]),
-                           (:completed, missing)]))
+                          [(:playing, 1:2, 1), (:pausing, 1:2, 1),
+                           (:playing, 1:2, 1), (:pausing, 1:2, 1),
+                           (:playing, [1, 2, 5], 2), (:pausing, [1, 2, 5], 2),
+                           (:playing, [1, 2, 5], 2), (:pausing, [1, 2, 5], 2),
+                           (:completed, missing, 3)]))
     end
 
     @testset "`learn_loop` from audio file" begin
@@ -135,8 +137,8 @@ using WAV
                                              iteration_mode=:sequential, dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 4000:20000), (:pausing, 4000:20000),
-                           (:playing, 4000:20000), (:pausing, 4000:20000),
-                           (:completed, missing)]))
+                          [(:playing, 4000:20000, 1), (:pausing, 4000:20000, 1),
+                           (:playing, 4000:20000, 1), (:pausing, 4000:20000, 1),
+                           (:completed, missing, 2)]))
     end
 end
