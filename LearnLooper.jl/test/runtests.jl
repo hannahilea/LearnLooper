@@ -42,7 +42,7 @@ using WAV
                            (:pausing, [1, 2, 3, 4]),
                            (:playing, [1, 2, 3, 4]),
                            (:pausing, [1, 2, 3, 4]),
-                           (:complete, missing)]))
+                           (:completed, missing)]))
 
         empty!(output_record)
         learn_loop("A lone sentence is indexed by word", [1:2, 3:4]; state_callback,
@@ -56,7 +56,7 @@ using WAV
                            (:pausing, [1, 2, 3, 4]),
                            (:playing, [1, 2, 3, 4]),
                            (:pausing, [1, 2, 3, 4]),
-                           (:complete, missing)]))
+                           (:completed, missing)]))
 
         empty!(output_record)
         learn_loop(["A vector of phrases", "are indexed", "by phrase"],
@@ -66,7 +66,7 @@ using WAV
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
                           [(:playing, 1:2), (:pausing, 1:2), (:playing, [1, 2, 3]),
-                           (:pausing, [1, 2, 3]), (:complete, missing)]))
+                           (:pausing, [1, 2, 3]), (:completed, missing)]))
 
         empty!(output_record)
         learn_loop(pi + 0, [1:4]; state_callback,
@@ -74,7 +74,7 @@ using WAV
                                              iteration_mode=:cumulative, dryrun=true))
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
-                          [(:playing, 1:4), (:pausing, 1:4), (:complete, missing)]))
+                          [(:playing, 1:4), (:pausing, 1:4), (:completed, missing)]))
 
         empty!(output_record)
         learn_loop(pi + 0, [1:4, 2:3]; state_callback,
@@ -84,7 +84,7 @@ using WAV
         @test isequal(output_record,
                       map(x -> LearnLooper.PlayStateRecord(x...),
                           [(:playing, 1:4), (:pausing, 0.1), (:playing, [1, 2, 3, 4, 2, 3]),
-                           (:pausing, 0.1), (:complete, missing)]))
+                           (:pausing, 0.1), (:completed, missing)]))
     end
 
     @testset "`learn_loop` from file" begin
@@ -101,7 +101,7 @@ using WAV
                            (:playing, [1, 2, 3, 4]),
                            (:pausing, [1, 2, 3, 4]),
                            (:playing, [1, 2, 3, 4]),
-                           (:pausing, [1, 2, 3, 4]), (:complete, missing)]))
+                           (:pausing, [1, 2, 3, 4]), (:completed, missing)]))
 
         empty!(output_record)
         learn_loop(readlines(f), [1:2, 5:5]; state_callback,
@@ -114,7 +114,7 @@ using WAV
                            (:playing, 1:2), (:pausing, 1:2),
                            (:playing, [1, 2, 5]), (:pausing, [1, 2, 5]),
                            (:playing, [1, 2, 5]), (:pausing, [1, 2, 5]),
-                           (:complete, missing)]))
+                           (:completed, missing)]))
     end
 
     @testset "`learn_loop` from audio file" begin
@@ -137,6 +137,6 @@ using WAV
                       map(x -> LearnLooper.PlayStateRecord(x...),
                           [(:playing, 4000:20000), (:pausing, 4000:20000),
                            (:playing, 4000:20000), (:pausing, 4000:20000),
-                           (:complete, missing)]))
+                           (:completed, missing)]))
     end
 end

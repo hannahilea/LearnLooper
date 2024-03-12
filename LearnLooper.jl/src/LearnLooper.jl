@@ -23,6 +23,10 @@ Base.@kwdef mutable struct Config
     dryrun::Bool = false
 end
 
+Base.@kwdef mutable struct PlaybackController
+    stop_asap::Bool = false # used to cancel mid-run
+end
+
 struct PlayStateRecord
     state::Symbol
     # i::Int #TODO: make this so 
@@ -153,36 +157,41 @@ Arguments:
 * `config::Config`: See [`Config`](@ref) for parameters.
 * `state_callback`: Function that takes [`PlayStateRecord`](@ref) as input and 
     returns `nothing`; called whenever internal learning state (play/pause) changes.
-    Final callback at conclusion of `learn_loop` will always pass in 
-    `PlayStateRecord(:complete,missing)`.
+    Final callback at conclusion of `learn_loop` will always have a state of either 
+    `PlayStateRecord(:completed,missing)` or `PlayStateRecord(:stopped,missing)`.
 
 Non-contiguous `spans` may result in a click in cumulative iteration mode.
 """
-function learn_loop(input, spans; config::Config, state_callback::Function=_ -> nothing)
+function learn_loop(input, spans; config::Config, controller = PlaybackController(), state_callback::Function=_ -> nothing)
     input, spans = prepare_input(input, spans)
+    @info "Started learn loop..." config controller
 
     for i in eachindex(spans)
+        controller.stop_asap && continue
         span = collect_span(i, spans; config.iteration_mode)
         slice = _slice(input, span)
 
         i_rep = 1
-        while ismissing(config.num_repetitions) || i_rep <= config.num_repetitions
+        while !(controller.stop_asap) && (ismissing(config.num_repetitions) || i_rep <= config.num_repetitions)
             state_callback(PlayStateRecord(:playing, span))
             config.dryrun || play(slice; config.speed)
+            controller.stop_asap && break
 
             if config.pause_for_response
                 state_callback(PlayStateRecord(:pausing, span))
                 config.dryrun || pause(slice; config.speed)
+                controller.stop_asap && break
             end
 
             if config.interrepeat_pause != 0
                 state_callback(PlayStateRecord(:pausing, config.interrepeat_pause))
                 config.dryrun || sleep(config.interrepeat_pause)
+                controller.stop_asap && break
             end
             i_rep += 1
         end
     end
-    state_callback(PlayStateRecord(:complete, missing))
+    state_callback(PlayStateRecord(controller.stop_asap ? :stopped : :completed, missing))
     return nothing
 end
 
