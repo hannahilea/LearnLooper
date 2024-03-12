@@ -108,14 +108,19 @@ function on_interrepeat_pause_changed(widgetptr, _)
     return nothing
 end
 
+function on_num_repetitions_changed(widgetptr, _)
+    widget = convert(Gtk4.GtkScale, widgetptr)
+    LEARNLOOP_CONFIG.num_repetitions = Gtk4.value(widget)
+    @debug LEARNLOOP_CONFIG
+    return nothing
+end
+
 #####
 ##### GUI
 #####
 
 function set_up_gui()
     box = GtkBox(:v; name="content_box")
-
-    #     num_repetitions::Union{Missing,Int} = 2
 
     # Add buttons to UI
     loop_state_label = Gtk4.GtkLabel("Loop state: nothing")
@@ -124,17 +129,18 @@ function set_up_gui()
     Gtk4.on_clicked(on_play_pause_clicked, play_pause_button,
                     (button=play_pause_button, loop_state_label))
 
-    # TODO-future: map non-linear
     let
-        hbox = GtkBox(:v; name="speed_box")
-        push!(hbox, GtkLabel("Playback speed: "))
-        speed_scale = GtkScale(:h, 0.25, 1.75, 0.1; draw_value=true, digits=2)
-        Gtk4.on_value_changed(on_speed_value_changed, speed_scale, nothing)
-        Gtk4.value(speed_scale, LEARNLOOP_CONFIG.speed)
-        push!(hbox, speed_scale)
+        #TODO-future: support inf repetitions (missing)
+        hbox = GtkBox(:v; name="num_repetitions_box")
+        push!(hbox, GtkLabel("Num repetitions: "))
+        num_repetitions_scale = GtkScale(:h, 1, 10, 1; draw_value=true, digits=0)
+        Gtk4.on_value_changed(on_num_repetitions_changed, num_repetitions_scale, nothing)
+        Gtk4.value(num_repetitions_scale, LEARNLOOP_CONFIG.num_repetitions)
+        push!(hbox, num_repetitions_scale)
         push!(box, hbox)
     end
 
+    # TODO-future: map non-linear
     let
         hbox = GtkBox(:v; name="speed_box")
         push!(hbox, GtkLabel("Playback speed: "))
@@ -149,7 +155,8 @@ function set_up_gui()
         hbox = GtkBox(:v; name="interrepeat_pause_box")
         push!(hbox, GtkLabel("Extra pause after repeat [sec]: "))
         interrepeat_pause_scale = GtkScale(:h, 0.0, 3, 0.1; draw_value=true, digits=1)
-        Gtk4.on_value_changed(on_interrepeat_pause_changed, interrepeat_pause_scale, nothing)
+        Gtk4.on_value_changed(on_interrepeat_pause_changed, interrepeat_pause_scale,
+                              nothing)
         Gtk4.value(interrepeat_pause_scale, LEARNLOOP_CONFIG.interrepeat_pause)
         push!(hbox, interrepeat_pause_scale)
         push!(box, hbox)
@@ -216,7 +223,7 @@ function set_up_gui()
     push!(box, loop_state_label)
 
     # Finally, set up the main app window itself!
-    win = GtkWindow("LearnLooper!", 420, 200, true) # Last arg is "resizable" TODO-future: add Gtk function for setting via kwargs
+    win = GtkWindow("LearnLooper!", 420, 420, false) # Last arg is "resizable"
     push!(win, box)
     return win
 end
