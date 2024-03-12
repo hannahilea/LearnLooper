@@ -2,9 +2,10 @@
 module LearnLooperGUI
 
 export launch_gui
+export set_up_gui # TODO-remove export
 
 using LearnLooper
-using Gtk4
+using Gtk4, Gtk4.GLib
 
 # I don't _love_ setting global vars, but that's where we're at right now.
 # Also, as long as we can only have one app at a time, it really shouldn't matter...
@@ -87,19 +88,60 @@ end
 function set_up_gui()
     box = GtkBox(:v; name="content_box")
 
+    # Base.@kwdef mutable struct Config
+    #     num_repetitions::Union{Missing,Int} = 2
+    #     iteration_mode = :sequential
+    #     interrepeat_pause = 0
+    #     pause_for_response::Bool = true
+    #     speed = 1
+    #     dryrun::Bool = false
+    # end
+
+    # b1 = GtkButton("num_repetitions")
+    # b2 = GtkButton("iteration_mode")
+    # b3 = GtkButton("3")
+    # b_plus = GtkButton("interrepeat_pause")
+    # b4 = GtkButton("pause_for_response")
+    # b5 = GtkButton("speed")
+
+    # Add iteration mode radio buttons
+    #TODO-future: make helper function that does this
+    let
+        hbox = GtkBox(:h; name="iteration_mode_box")
+        push!(hbox, GtkLabel("Iteration mode: "))
+        push!(hbox,
+              GtkToggleButton("Cumulative"; action_name="iteration_mode.option",
+                              action_target=GVariant("cumulative"), group=hbox))
+        push!(hbox,
+              GtkToggleButton("Sequential"; action_name="iteration_mode.option",
+                              action_target=GVariant("sequential"), group=hbox))
+        push!(box, hbox)
+
+        function iteration_mode_option_callback(a, v)
+            Gtk4.GLib.set_state(a, v)
+            LEARNLOOP_CONFIG.iteration_mode = Symbol(v[String])
+            return nothing
+        end
+
+        action_group = GSimpleActionGroup()
+        add_stateful_action(GActionMap(action_group), "iteration_mode_option", String,
+                            string(LEARNLOOP_CONFIG.iteration_mode), iteration_mode_option_callback)
+        push!(box, Gtk4.GLib.GActionGroup(action_group), "iteration_mode")
+    end
+
     # Add buttons to UI
     dry_run_button = GtkButton(LEARNLOOP_CONFIG.dryrun ? "Disable dry run mode" :
                                "Enable dry run mode")
     push!(box, dry_run_button)
-    Gtk4.on_clicked(on_dry_run_clicked, dry_run_button, (button=dry_run_button,))
+    # Gtk4.on_clicked(on_dry_run_clicked, dry_run_button, (button=dry_run_button,))
 
     loop_state_label = Gtk4.GtkLabel("Loop state: nothing")
     push!(box, loop_state_label)
 
     play_pause_button = GtkButton("Learn loop!😄 ✔️")
     push!(box, play_pause_button)
-    Gtk4.on_clicked(on_play_pause_clicked, play_pause_button,
-                    (button=play_pause_button, loop_state_label))
+    # Gtk4.on_clicked(on_play_pause_clicked, play_pause_button,
+    #                 (button=play_pause_button, loop_state_label))
 
     # Finally, set up the main app window itself!
     win = GtkWindow("LearnLooper!", 420, 200, false) # Last arg is "resizable" TODO-future: add Gtk function for setting via kwargs

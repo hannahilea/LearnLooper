@@ -3,6 +3,7 @@ module LearnLooper
 using WAV
 
 export learn_loop, launch_gui
+export set_up_gui #TODO remove export
 
 struct WAVData
     sample_rate::Any
