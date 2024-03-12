@@ -73,11 +73,38 @@ function on_play_pause_clicked(_, data)
     return nothing
 end
 
-function on_dry_run_clicked(_, data)
-    dryrun_mode = LEARNLOOP_CONFIG.dryrun
-    println("Dry run mode ", dryrun_mode ? "disabled" : "enabled", "!")
-    LEARNLOOP_CONFIG.dryrun = !dryrun_mode
-    data.button.label = dryrun_mode ? "Enable dry run mode" : "Disable dry run mode"
+function on_iteration_mode_changed_callback(a, v)
+    Gtk4.GLib.set_state(a, v)
+    LEARNLOOP_CONFIG.iteration_mode = Symbol(v[String])
+    @debug LEARNLOOP_CONFIG
+    return nothing
+end
+
+function on_pause_for_response_changed_callback(a, v)
+    Gtk4.GLib.set_state(a, v)
+    LEARNLOOP_CONFIG.pause_for_response = v[String] == "enabled"
+    @debug LEARNLOOP_CONFIG
+    return nothing
+end
+
+function on_dryrun_mode_changed_callback(a, v)
+    Gtk4.GLib.set_state(a, v)
+    LEARNLOOP_CONFIG.dryrun = v[String] == "enabled"
+    @debug LEARNLOOP_CONFIG
+    return nothing
+end
+
+function on_speed_value_changed(widgetptr, _)
+    widget = convert(Gtk4.GtkScale, widgetptr)
+    LEARNLOOP_CONFIG.speed = Gtk4.value(widget)
+    @debug LEARNLOOP_CONFIG
+    return nothing
+end
+
+function on_interrepeat_pause_changed(widgetptr, _)
+    widget = convert(Gtk4.GtkScale, widgetptr)
+    LEARNLOOP_CONFIG.interrepeat_pause = Gtk4.value(widget)
+    @debug LEARNLOOP_CONFIG
     return nothing
 end
 
@@ -88,26 +115,50 @@ end
 function set_up_gui()
     box = GtkBox(:v; name="content_box")
 
-    # Base.@kwdef mutable struct Config
     #     num_repetitions::Union{Missing,Int} = 2
-    #     iteration_mode = :sequential
-    #     interrepeat_pause = 0
-    #     pause_for_response::Bool = true
-    #     speed = 1
-    #     dryrun::Bool = false
-    # end
 
-    # b1 = GtkButton("num_repetitions")
-    # b2 = GtkButton("iteration_mode")
-    # b3 = GtkButton("3")
-    # b_plus = GtkButton("interrepeat_pause")
-    # b4 = GtkButton("pause_for_response")
-    # b5 = GtkButton("speed")
+    # Add buttons to UI
+    loop_state_label = Gtk4.GtkLabel("Loop state: nothing")
+    play_pause_button = GtkButton("Learn loop!😄 ✔️")
+    push!(box, play_pause_button)
+    Gtk4.on_clicked(on_play_pause_clicked, play_pause_button,
+                    (button=play_pause_button, loop_state_label))
+
+    # TODO-future: map non-linear
+    let
+        hbox = GtkBox(:v; name="speed_box")
+        push!(hbox, GtkLabel("Playback speed: "))
+        speed_scale = GtkScale(:h, 0.25, 1.75, 0.1; draw_value=true, digits=2)
+        Gtk4.on_value_changed(on_speed_value_changed, speed_scale, nothing)
+        Gtk4.value(speed_scale, LEARNLOOP_CONFIG.speed)
+        push!(hbox, speed_scale)
+        push!(box, hbox)
+    end
+
+    let
+        hbox = GtkBox(:v; name="speed_box")
+        push!(hbox, GtkLabel("Playback speed: "))
+        speed_scale = GtkScale(:h, 0.25, 1.75, 0.1; draw_value=true, digits=2)
+        Gtk4.on_value_changed(on_speed_value_changed, speed_scale, nothing)
+        Gtk4.value(speed_scale, LEARNLOOP_CONFIG.speed)
+        push!(hbox, speed_scale)
+        push!(box, hbox)
+    end
+
+    let
+        hbox = GtkBox(:v; name="interrepeat_pause_box")
+        push!(hbox, GtkLabel("Extra pause after repeat [sec]: "))
+        interrepeat_pause_scale = GtkScale(:h, 0.0, 3, 0.1; draw_value=true, digits=1)
+        Gtk4.on_value_changed(on_interrepeat_pause_changed, interrepeat_pause_scale, nothing)
+        Gtk4.value(interrepeat_pause_scale, LEARNLOOP_CONFIG.interrepeat_pause)
+        push!(hbox, interrepeat_pause_scale)
+        push!(box, hbox)
+    end
 
     # Add iteration mode radio buttons
     #TODO-future: make helper function that does this
     let
-        hbox = GtkBox(:h; name="iteration_mode_box")
+        hbox = GtkBox(:h; name="iteration_box")
         push!(hbox, GtkLabel("Iteration mode: "))
         push!(hbox,
               GtkToggleButton("Cumulative"; action_name="iteration_mode.option",
@@ -117,34 +168,55 @@ function set_up_gui()
                               action_target=GVariant("sequential"), group=hbox))
         push!(box, hbox)
 
-        function iteration_mode_option_callback(a, v)
-            Gtk4.GLib.set_state(a, v)
-            LEARNLOOP_CONFIG.iteration_mode = Symbol(v[String])
-            return nothing
-        end
-
         action_group = GSimpleActionGroup()
-        add_stateful_action(GActionMap(action_group), "iteration_mode_option", String,
-                            string(LEARNLOOP_CONFIG.iteration_mode), iteration_mode_option_callback)
+        add_stateful_action(GActionMap(action_group), "option", String,
+                            string(LEARNLOOP_CONFIG.iteration_mode),
+                            on_iteration_mode_changed_callback)
         push!(box, Gtk4.GLib.GActionGroup(action_group), "iteration_mode")
     end
 
-    # Add buttons to UI
-    dry_run_button = GtkButton(LEARNLOOP_CONFIG.dryrun ? "Disable dry run mode" :
-                               "Enable dry run mode")
-    push!(box, dry_run_button)
-    # Gtk4.on_clicked(on_dry_run_clicked, dry_run_button, (button=dry_run_button,))
+    # Pause for response radio buttons
+    let
+        hbox = GtkBox(:h; name="pause_response_box")
+        push!(hbox, GtkLabel("Pause for response: "))
+        push!(hbox,
+              GtkToggleButton("Enabled"; action_name="pause_response_mode.option",
+                              action_target=GVariant("enabled"), group=hbox))
+        push!(hbox,
+              GtkToggleButton("Disabled"; action_name="pause_response_mode.option",
+                              action_target=GVariant("disabled"), group=hbox))
+        push!(box, hbox)
 
-    loop_state_label = Gtk4.GtkLabel("Loop state: nothing")
+        action_group = GSimpleActionGroup()
+        add_stateful_action(GActionMap(action_group), "option", String,
+                            LEARNLOOP_CONFIG.pause_for_response ? "enabled" : "disabled",
+                            on_pause_for_response_changed_callback)
+        push!(box, Gtk4.GLib.GActionGroup(action_group), "pause_response_mode")
+    end
+
+    # Dry run radio buttons
+    let
+        hbox = GtkBox(:h; name="dryrun_box")
+        push!(hbox, GtkLabel("Dryrun mode: "))
+        push!(hbox,
+              GtkToggleButton("Enabled"; action_name="dryrun_mode.option",
+                              action_target=GVariant("enabled"), group=hbox))
+        push!(hbox,
+              GtkToggleButton("Disabled"; action_name="dryrun_mode.option",
+                              action_target=GVariant("disabled"), group=hbox))
+        push!(box, hbox)
+
+        action_group = GSimpleActionGroup()
+        add_stateful_action(GActionMap(action_group), "option", String,
+                            LEARNLOOP_CONFIG.dryrun ? "enabled" : "disabled",
+                            on_dryrun_mode_changed_callback)
+        push!(box, Gtk4.GLib.GActionGroup(action_group), "dryrun_mode")
+    end
+
     push!(box, loop_state_label)
 
-    play_pause_button = GtkButton("Learn loop!😄 ✔️")
-    push!(box, play_pause_button)
-    # Gtk4.on_clicked(on_play_pause_clicked, play_pause_button,
-    #                 (button=play_pause_button, loop_state_label))
-
     # Finally, set up the main app window itself!
-    win = GtkWindow("LearnLooper!", 420, 200, false) # Last arg is "resizable" TODO-future: add Gtk function for setting via kwargs
+    win = GtkWindow("LearnLooper!", 420, 200, true) # Last arg is "resizable" TODO-future: add Gtk function for setting via kwargs
     push!(win, box)
     return win
 end
