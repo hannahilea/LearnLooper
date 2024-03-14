@@ -30,6 +30,8 @@ function on_play_pause_clicked(_, data)
         @debug "Attempting to cancel" PLAYBACK_CONTROLLER[]
         data.loop_state_label.label = "Cancelling playback"
         PLAYBACK_CONTROLLER[].stop_asap = true # Will stop playback at end of next loop
+    elseif ismissing(AUDIO[])
+        @debug "no audio selected!"
     else
         # TODO: safety first! if no AUDIO[] refuse to play
         @debug "Started playing (allegedly)"
@@ -64,6 +66,17 @@ function on_play_pause_clicked(_, data)
             end
         end
     end
+    return nothing
+end
+
+on_next_section_clicked!(args...) = jump_current_span!(1)
+on_prev_section_clicked!(args...) = jump_current_span!(-1)
+
+function jump_current_span!(jump_amount)
+    if isnothing(PLAYBACK_CONTROLLER[])
+        return nothing
+    end
+    push!(PLAYBACK_CONTROLLER[].jump_amounts, jump_amount)
     return nothing
 end
 
@@ -160,12 +173,24 @@ function set_up_gui()
         signal_connect(open_file_open_dialog, file_open_dialog_button, "clicked")
     end
 
-    # Add buttons to UI
+    # Add transport buttons to UI
+    transport_box = GtkBox(:v; name="transport_box")
     loop_state_label = Gtk4.GtkLabel("Loop state: nothing")
     play_pause_button = GtkButton("Learn loop!😄 ✔️")
-    push!(box, play_pause_button)
+    push!(transport_box, play_pause_button)
     Gtk4.on_clicked(on_play_pause_clicked, play_pause_button,
                     (button=play_pause_button, loop_state_label))
+    push!(box, transport_box)
+
+    let
+        transport_next_button = GtkButton("Jump to next section")
+        Gtk4.on_clicked(on_next_section_clicked!, transport_next_button, missing)
+        push!(transport_box, transport_next_button)
+
+        transport_prev_button = GtkButton("Jump to previous section")
+        Gtk4.on_clicked(on_prev_section_clicked!, transport_prev_button, missing)
+        push!(transport_box, transport_prev_button)
+    end
 
     let
         #TODO-future: support inf repetitions (missing)
@@ -179,15 +204,16 @@ function set_up_gui()
     end
 
     # TODO-future: map non-linear
-    let
-        hbox = GtkBox(:v; name="speed_box")
-        push!(hbox, GtkLabel("Playback speed: "))
-        speed_scale = GtkScale(:h, 0.25, 1.75, 0.1; draw_value=true, digits=2)
-        Gtk4.on_value_changed(on_speed_value_changed, speed_scale, nothing)
-        Gtk4.value(speed_scale, LEARNLOOP_CONFIG.speed)
-        push!(hbox, speed_scale)
-        push!(box, hbox)
-    end
+    # TODO-un-hide when feature is implemented!
+    # let
+    #     hbox = GtkBox(:v; name="speed_box")
+    #     push!(hbox, GtkLabel("Playback speed: "))
+    #     speed_scale = GtkScale(:h, 0.25, 1.75, 0.1; draw_value=true, digits=2)
+    #     Gtk4.on_value_changed(on_speed_value_changed, speed_scale, nothing)
+    #     Gtk4.value(speed_scale, LEARNLOOP_CONFIG.speed)
+    #     push!(hbox, speed_scale)
+    #     push!(box, hbox)
+    # end
 
     let
         hbox = GtkBox(:v; name="interrepeat_pause_box")
@@ -258,6 +284,27 @@ function set_up_gui()
         push!(box, Gtk4.GLib.GActionGroup(action_group), "dryrun_mode")
     end
     push!(box, loop_state_label)
+
+    # Set up keyboard as controller
+    event_controller = GtkEventControllerKey(win)
+    signal_connect(event_controller, "key-pressed") do controller, keyval, keycode, state
+        @debug string("You pressed key ", keyval, " which is '", Char(keyval), "'.")
+        if keyval == 32 # space bar 
+            println(Char(keyval), " pressed")
+            on_play_pause_clicked(missing, (button=play_pause_button, loop_state_label))
+        elseif keyval == 65363 # right arrow 
+            println(Char(keyval), " pressed")
+            on_next_section_clicked!()
+        elseif keyval == 65361 # left arrow 
+            println(Char(keyval), " pressed")
+            on_prev_section_clicked!()
+        end
+        # 65364 # up arrow 
+        # 65362 # down arrow 
+        # 65361 left arrow
+        # 65363 right arrow 
+    end
+
     return win
 end
 

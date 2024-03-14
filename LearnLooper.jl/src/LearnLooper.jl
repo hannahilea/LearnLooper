@@ -27,6 +27,7 @@ end
 Base.@kwdef mutable struct PlaybackController
     stop_asap::Bool = false # used to cancel mid-run
     i_start_slice::Int = 1 # used to set the *starting* segment; is not updated mid-playback
+    jump_amounts::Vector{Int} = []
 end
 
 struct PlayStateRecord
@@ -170,9 +171,27 @@ function learn_loop(input, spans; config::Config, controller = PlaybackControlle
     input, spans = prepare_input(input, spans)
     @debug "Started learn loop..." config controller
 
-    i_span = controller.i_start_slice
-    while i_span <= length(spans)
+    applied_jump_amounts = Int[]
+    user_jump_pending = () -> !isequal(applied_jump_amounts, controller.jump_amounts)
+
+    i_span = controller.i_start_slice - 1
+    while true
         controller.stop_asap && break
+
+        # Progress to next section OR if user has requested a different progression
+        # amount, apply it instead
+        if user_jump_pending()
+            # ...apply that change!
+            i_new_amt = length(applied_jump_amounts) + 1
+            amts_to_apply = controller.jump_amounts[i_new_amt:end]
+            append!(applied_jump_amounts, amts_to_apply)
+            @assert isequal(applied_jump_amounts, controller.jump_amounts)
+            i_span += sum(amts_to_apply)
+        else 
+            i_span += 1
+        end
+        (i_span < 1 || i_span > length(spans)) && break
+
         slice_span = collect_span(i_span, spans; config.iteration_mode)
         slice = _slice(input, slice_span)
 
@@ -180,22 +199,21 @@ function learn_loop(input, spans; config::Config, controller = PlaybackControlle
         while !(controller.stop_asap) && (ismissing(config.num_repetitions) || i_rep <= config.num_repetitions)
             state_callback(PlayStateRecord(:playing, slice_span, i_span))
             config.dryrun || play(slice; config.speed)
-            controller.stop_asap && break
+            (controller.stop_asap || user_jump_pending()) && break
 
             if config.pause_for_response
                 state_callback(PlayStateRecord(:pausing, slice_span, i_span))
                 config.dryrun || pause(slice; config.speed)
-                controller.stop_asap && break
+                (controller.stop_asap || user_jump_pending()) && break
             end
 
             if config.interrepeat_pause != 0
                 state_callback(PlayStateRecord(:pausing, config.interrepeat_pause, i_span))
                 config.dryrun || sleep(config.interrepeat_pause)
-                controller.stop_asap && break
+                (controller.stop_asap || user_jump_pending()) && break
             end
             i_rep += 1
         end
-        i_span += 1
     end
     state_callback(PlayStateRecord(controller.stop_asap ? :stopped : :completed, missing, i_span))
     return nothing
