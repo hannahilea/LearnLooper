@@ -10,24 +10,17 @@ using Gtk4, Gtk4.GLib
 # I don't _love_ setting global vars, but that's where we're at right now.
 # Also, as long as we can only have one app at a time, it really shouldn't matter...
 
-#TODO-future: update different demo path
-# TODO: combine these into some input struct type
-const INPUT_PATHS = [joinpath(pkgdir(LearnLooper), "..", "demos", "2024-02-29_RC2",
-                              "KillavilJigSlowFlute.wav"),
-                     joinpath(pkgdir(LearnLooper), "..", "demos", "2024-02-29_RC2",
-                              "KillavilJigVariations.wav")]
-const INPUT_SPANS = [[(2.3, 6.498), (6.498, 10.6)],
-                     [(2.3, 6.498), (6.498, 10.6)]]
+const INPUT_PATH = Ref{String}("")
+const INPUT_SPANS_PATH = Ref{String}("")
 
-const INPUT_PATH = Ref{String}(INPUT_PATHS[1])
-const SPANS = Ref{Any}(INPUT_SPANS[1])
 const LEARNLOOP_CONFIG = LearnLooper.Config()
+const AUDIO = Ref{Union{Missing,LearnLooper.WAVData}}(missing)
+const SPANS = Ref{Union{Missing,Vector}}(missing)
 
 #####
 ##### Behavior
 #####
 
-# const PLAYBACK_THREAD = Ref{Union{Nothing,Int64}}(nothing)
 const PLAYBACK_CONTROLLER = Ref{Union{Nothing,LearnLooper.PlaybackController}}(nothing)
 
 function on_play_pause_clicked(_, data)
@@ -38,6 +31,7 @@ function on_play_pause_clicked(_, data)
         data.loop_state_label.label = "Cancelling playback"
         PLAYBACK_CONTROLLER[].stop_asap = true # Will stop playback at end of next loop
     else
+        # TODO: safety first! if no AUDIO[] refuse to play
         @debug "Started playing (allegedly)"
         data.button.label = "Currently playing!"
         data.loop_state_label.label = "button pushed"
@@ -57,7 +51,7 @@ function on_play_pause_clicked(_, data)
                 return nothing
             end
 
-            learn_loop(collect('a':'z'), [1:2, 3:4]; state_callback,
+            learn_loop(AUDIO[], SPANS[]; state_callback,
                        controller=PLAYBACK_CONTROLLER[],
                        config=LEARNLOOP_CONFIG)
 
@@ -115,12 +109,56 @@ function on_num_repetitions_changed(widgetptr, _)
     return nothing
 end
 
+function load_spans_for_audiofile(wavfile)
+    # Hella hacky!! TODO-future: make this NICE 
+    labelfile = replace(wavfile, ".wav" => ".txt")
+    spans = [(1, 5), (5, 9)] #TODO-future: nicer default??
+    if isfile(labelfile)
+        # Approach 1
+        spans = map(readlines(labelfile)) do line
+            values = split(line, "\t")
+            return Tuple(parse.(Float64, values[1:2]))
+        end
+    else
+        @warn "No span labels found ($labelfile); using default spans"
+    end
+    @debug "Loaded spans: " spans
+    return spans
+end
+
 #####
 ##### GUI
 #####
 
 function set_up_gui()
     box = GtkBox(:v; name="content_box")
+    win = GtkWindow("LearnLooper!", 420, 420, false) # Last arg is "resizable"
+    push!(win, box)
+
+    let
+        file_label = Gtk4.GtkLabel("Currently learning: $(basename(INPUT_PATH[]))")
+        push!(box, file_label)
+
+        file_open_dialog_button = GtkButton("Select file to learn!")
+        push!(box, file_open_dialog_button)
+
+        function open_file_open_dialog(_)
+            open_dialog("Select a file to learn", win) do filename
+                # @async println("selection was ", filename)
+                if !isempty(filename)
+                    INPUT_PATH[] = filename
+                    @debug filename
+                    file_label.label = "Currently learning: $(basename(filename))"
+                    AUDIO[] = LearnLooper.WAVData(filename)
+                    SPANS[] = load_spans_for_audiofile(filename)
+                else
+                    @warn "No file selected"
+                end
+            end
+            return nothing
+        end
+        signal_connect(open_file_open_dialog, file_open_dialog_button, "clicked")
+    end
 
     # Add buttons to UI
     loop_state_label = Gtk4.GtkLabel("Loop state: nothing")
@@ -219,12 +257,7 @@ function set_up_gui()
                             on_dryrun_mode_changed_callback)
         push!(box, Gtk4.GLib.GActionGroup(action_group), "dryrun_mode")
     end
-
     push!(box, loop_state_label)
-
-    # Finally, set up the main app window itself!
-    win = GtkWindow("LearnLooper!", 420, 420, false) # Last arg is "resizable"
-    push!(win, box)
     return win
 end
 
