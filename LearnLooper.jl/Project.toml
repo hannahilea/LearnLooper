@@ -1,13 +1,15 @@
 name = "LearnLooper"
 uuid = "e89896d8-c5cb-49c4-9dca-99a75ba5130e"
 authors = ["hannahilea <hannahilea@users.noreply.github.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
+Gtk4 = "9db2cae5-386f-4011-9d63-a5602296539b"
 WAV = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"
 
 [compat]
 Aqua = "0.6"
+Gtk4 = "0.6.3"
 WAV = "1.2.0"
 julia = "1.7.2"
 

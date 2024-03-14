@@ -33,6 +33,16 @@ Housekeeping:
 
 ### Dev log 
 
+- To do: 
+  - [ ] Get 2-button GUI 
+  - [ ] play button plays
+  - [ ] optional: swap out for sox
+  - [ ] Update to use https://juliagtk.github.io/Gtk4.jl/stable/howto/nonreplusage/#GtkApplication 
+  - [ ] Attempt PackageCompiler
+
+#### 4 March
+- Continue on Gtk4.jl rewrite
+
 #### 28 Feb
 - Update docstrings
 
