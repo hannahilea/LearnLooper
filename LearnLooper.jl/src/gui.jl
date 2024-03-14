@@ -32,6 +32,7 @@ function on_play_pause_clicked(_, data)
         PLAYBACK_CONTROLLER[].stop_asap = true # Will stop playback at end of next loop
     elseif ismissing(AUDIO[])
         @debug "no audio selected!"
+        data.loop_state_label.label = "File must be selected before play"
     else
         # TODO: safety first! if no AUDIO[] refuse to play
         @debug "Started playing (allegedly)"
@@ -290,19 +291,25 @@ function set_up_gui()
     signal_connect(event_controller, "key-pressed") do controller, keyval, keycode, state
         @debug string("You pressed key ", keyval, " which is '", Char(keyval), "'.")
         if keyval == 32 # space bar 
-            println(Char(keyval), " pressed")
+            println(Char(keyval), "` ` pressed")
             on_play_pause_clicked(missing, (button=play_pause_button, loop_state_label))
         elseif keyval == 65363 # right arrow 
-            println(Char(keyval), " pressed")
+            println(Char(keyval), "` ` pressed")
             on_next_section_clicked!()
         elseif keyval == 65361 # left arrow 
-            println(Char(keyval), " pressed")
+            println(Char(keyval), "` ` pressed")
             on_prev_section_clicked!()
         end
         # 65364 # up arrow 
         # 65362 # down arrow 
         # 65361 left arrow
         # 65363 right arrow 
+
+        # "Control-W to close"
+        mask = Gtk4.ModifierType_CONTROL_MASK
+        if ((ModifierType(state & Gtk4.MODIFIER_MASK) & mask == mask) && keyval == UInt('w'))
+            close(widget(event_controller))
+        end
     end
 
     return win
